@@ -146,32 +146,32 @@
     },
     
     {
-      "question": "什麼是「德雷克公式（Drake Equation） 」？",
+      "question": "什麼是「德雷克公式（Drake Equation）」？",
       "explanation": "德雷克公式是天文學家法蘭克·德雷克在1961年提出的一個數學公式，用來估計銀河系中可能存在且與人類通訊的智慧文明數量。這個公式包含了多個變數，例如恆星形成的速率、行星系統中擁有生命的行星比例等。",
       "type": "term"
     },
     {
-      "question": "什麼是「魯布·戈德堡機械（Rube Goldberg machine） 」？",
+      "question": "什麼是「魯布·戈德堡機械（Rube Goldberg machine）」？",
       "explanation": "魯布·戈德堡機械是一種故意設計得極其複雜，以間接的方式完成簡單任務的裝置。這個名字源於美國漫畫家魯布·戈德堡，他的漫畫中經常描繪這類用一連串誇張的連鎖反應來完成一件小事的機器。",
       "type": "term"
     },
     {
-      "question": "什麼是「德史特魯普效應（Stroop effect） 」？",
+      "question": "什麼是「德史特魯普效應（Stroop effect）」？",
       "explanation": "史特魯普效應是一種心理學現象。當你看到一個顏色名稱（例如「藍色」），但這個名稱是用另一種顏色（例如綠色）寫成時，你會需要更長的時間來辨識這個字的顏色，因為大腦會自動且不自覺地先去閱讀文字內容。",
       "type": "term"
     },
     {
-    "question": "什麼是「安慰劑效應（Placebo Effect） 」？",
+    "question": "什麼是「安慰劑效應（Placebo Effect）」？",
     "explanation": "安慰劑效應是指病人因相信某種治療有效而使症狀得到改善，即使這種治療本身沒有任何實際的藥理作用。這種改善是心理作用對生理狀態產生的影響。",
     "type": "term"
     },
     {
-    "question": "什麼是「摩爾定律（Moore's Law） 」？",
+    "question": "什麼是「摩爾定律（Moore's Law）」？",
     "explanation": "摩爾定律是由英特爾（Intel）共同創辦人高登·摩爾（Gordon Moore）提出。它預測積體電路上的電晶體數量大約每兩年就會翻倍，這也意味著電腦的處理能力將持續以指數級速度提升，同時成本下降。",
     "type": "term"
     },
     {
-    "question": "什麼是「曼德拉效應（Mandela Effect） 」？",
+    "question": "什麼是「曼德拉效應（Mandela Effect）」？",
     "explanation": "曼德拉效應是指許多人集體對某個事實或事件產生錯誤記憶的現象。這個詞源於人們錯誤地記得南非前總統曼德拉在1980年代去世，但事實上他於2013年才離世。這種現象被認為與集體記憶、假記憶或訊息傳播偏差有關。",
     "type": "term"
     }

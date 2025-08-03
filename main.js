@@ -1,172 +1,14 @@
-// Firebase 設定
-const firebaseConfig = {
-  apiKey: "AIzaSyB95BnsfKtB__X6K7KbPCT0zng4eofZ3Ks",
-  authDomain: "shitty-24b2f.firebaseapp.com",
-  databaseURL: "https://shitty-24b2f-default-rtdb.firebaseio.com",
-  projectId: "shitty-24b2f",
-  storageBucket: "shitty-24b2f.appspot.com",
-  messagingSenderId: "370223390160",
-  appId: "1:370223390160:web:8be6cba5345de0f73eadd5"
-};
-
 // 初始化 Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 遊戲設定
-const GAME_CONFIG = {
-  // 題目類型出現機率 (why題目 : term題目)
-  typeRatio: { why: 0.45, term: 0.55 },
-  
-  // 角色分配機率 (老實人 : 瞎掰人)
-  roleRatio: { honest: 0.5, liar: 0.5 },
-  
-  // 降低重複機率的設定
-  recentQuestionsLimit: 5, // 最近幾題不會重複
-  
-  // 計分邏輯設定
-  scoring: {
-    // 想想猜對老實人時的得分
-    guesserCorrectHonest: { guesser: 1, answerer: 0 },
-    
-    // 想想猜錯老實人時的得分變化
-    guesserWrongHonest: { guesser: -1, answerer: -1 },
-    
-    // 想想猜對瞎掰人時的得分
-    guesserCorrectLiar: { guesser: 1, answerer: 0 },
-    
-    // 想想猜錯瞎掰人時的得分變化（瞎掰人成功騙到想想）
-    guesserWrongLiar: { guesser: 0, answerer: 2 }
-  }
-};
-
 // 遊戲狀態
 let currentPlayer = null;
 let gameState = null;
-let questions = []; // 從 Firebase 載入的題目
-let recentQuestions = []; // 最近使用過的題目索引
 
-// 計算分數變化
-function calculateScoreChange(guessResult, answererRole) {
-  const config = GAME_CONFIG.scoring;
-  
-  if (answererRole === 'honest') {
-    // 答題者是老實人
-    if (guessResult === 'correct') {
-      // 想想猜對老實人
-      return config.guesserCorrectHonest;
-    } else {
-      // 想想猜錯老實人
-      return config.guesserWrongHonest;
-    }
-  } else {
-    // 答題者是瞎掰人
-    if (guessResult === 'correct') {
-      // 想想猜對瞎掰人
-      return config.guesserCorrectLiar;
-    } else {
-      // 想想猜錯瞎掰人（瞎掰人成功騙到想想）
-      return config.guesserWrongLiar;
-    }
-  }
-}
-
-// 根據機率分配角色
-function assignAnswererRole() {
-  const random = Math.random();
-  return random < GAME_CONFIG.roleRatio.honest ? 'honest' : 'liar';
-}
-function loadQuestions() {
-  return new Promise((resolve, reject) => {
-    db.ref('questions').once('value', (snapshot) => {
-      const data = snapshot.val();
-      if (data && Array.isArray(data)) {
-        questions = data;
-        console.log('題目已載入:', questions.length, '題');
-        
-        // 統計題目類型
-        const whyCount = questions.filter(q => q.type === 'why').length;
-        const termCount = questions.filter(q => q.type === 'term').length;
-        console.log(`題目分布 - why: ${whyCount}題, term: ${termCount}題`);
-        
-        resolve(questions);
-      } else {
-        console.log('沒有找到題目，使用預設題目');
-        // 如果沒有題目，可以設定預設題目
-        questions = [
-          {
-            question: "為什麼企鵝不會飛？",
-            explanation: "企鵝的祖先原本會飛，但為了適應水中生活，翅膀演化成了更適合游泳的鰭狀肢。牠們的骨骼也變得更重，以便在水中保持穩定。",
-            type: "why"
-          }
-        ];
-        resolve(questions);
-      }
-    }, (error) => {
-      console.error('載入題目失敗:', error);
-      reject(error);
-    });
-  });
-}
-
-// 智能選擇題目
-function selectRandomQuestion() {
-  if (questions.length === 0) return null;
-  
-  // 如果題目總數不多，就簡單隨機選擇
-  if (questions.length <= GAME_CONFIG.recentQuestionsLimit) {
-    return Math.floor(Math.random() * questions.length);
-  }
-  
-  // 根據設定的機率決定要選擇哪種類型的題目
-  const whyQuestions = questions.map((q, i) => ({ ...q, index: i })).filter(q => q.type === 'why');
-  const termQuestions = questions.map((q, i) => ({ ...q, index: i })).filter(q => q.type === 'term');
-  
-  let selectedType;
-  const random = Math.random();
-  
-  if (random < GAME_CONFIG.typeRatio.why) {
-    selectedType = 'why';
-  } else {
-    selectedType = 'term';
-  }
-  
-  // 獲取對應類型的題目，排除最近使用過的
-  let availableQuestions;
-  if (selectedType === 'why') {
-    availableQuestions = whyQuestions.filter(q => !recentQuestions.includes(q.index));
-  } else {
-    availableQuestions = termQuestions.filter(q => !recentQuestions.includes(q.index));
-  }
-  
-  // 如果該類型沒有可用題目，則從另一類型選擇
-  if (availableQuestions.length === 0) {
-    if (selectedType === 'why') {
-      availableQuestions = termQuestions.filter(q => !recentQuestions.includes(q.index));
-    } else {
-      availableQuestions = whyQuestions.filter(q => !recentQuestions.includes(q.index));
-    }
-  }
-  
-  // 如果所有題目都在最近使用過，清空記錄重新開始
-  if (availableQuestions.length === 0) {
-    recentQuestions = [];
-    availableQuestions = selectedType === 'why' ? whyQuestions : termQuestions;
-  }
-  
-  // 隨機選擇一題
-  const selectedQuestion = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
-  const questionIndex = selectedQuestion.index;
-  
-  // 更新最近使用記錄
-  recentQuestions.push(questionIndex);
-  if (recentQuestions.length > GAME_CONFIG.recentQuestionsLimit) {
-    recentQuestions.shift(); // 移除最舊的記錄
-  }
-  
-  console.log(`選擇了 ${selectedType} 類型題目 (索引: ${questionIndex}): ${questions[questionIndex].question}`);
-  return questionIndex;
-}
+// 初始化管理器
+const questionsManager = new QuestionsManager();
+const gameUI = new GameUI();
 
 // 加入遊戲
 function joinAsPlayer(player) {
@@ -202,53 +44,62 @@ function joinAsPlayer(player) {
 function listenToGameState() {
   db.ref('game').on('value', (snapshot) => {
     const data = snapshot.val();
-    console.log('Firebase data:', data); // 除錯用
+    console.log('Firebase data:', data);
     
     if (!data) return;
 
     // 更新玩家狀態顯示
-    if (data.playerA && data.playerA.name) {
-      document.getElementById('playerA-section').classList.add('filled');
-      document.getElementById('playerA-status').innerHTML = `✅ ${data.playerA.name} 已加入`;
-      document.getElementById('playerA-name').disabled = true;
-      document.querySelector('#playerA-section button').disabled = true;
-    }
-    
-    if (data.playerB && data.playerB.name) {
-      document.getElementById('playerB-section').classList.add('filled');
-      document.getElementById('playerB-status').innerHTML = `✅ ${data.playerB.name} 已加入`;
-      document.getElementById('playerB-name').disabled = true;
-      document.querySelector('#playerB-section button').disabled = true;
-    }
+    updatePlayerStatus(data);
 
     // 檢查兩個玩家是否都已加入
-    if (data.playerA && data.playerB && data.playerA.name && data.playerB.name) {
-      document.getElementById('startGame').disabled = false;
-      document.getElementById('startGame').innerHTML = '🚀 開始遊戲（兩人都已就緒）';
-      console.log('Both players joined, start button enabled'); // 除錯用
-    } else {
-      document.getElementById('startGame').disabled = true;
-      document.getElementById('startGame').innerHTML = '開始遊戲';
-      console.log('Waiting for players...'); // 除錯用
-    }
+    updateStartButton(data);
 
-    // 重要：只有當遊戲明確開始 (gameStarted: true) 且當前用戶已選擇角色時才進入遊戲畫面
+    // 重要：只有當遊戲明確開始且當前用戶已選擇角色時才進入遊戲畫面
     if (data.gameStarted === true && currentPlayer && data.playerA && data.playerB) {
-      console.log('Game started, showing game area'); // 除錯用
+      console.log('Game started, showing game area');
       gameState = data;
-      showGameArea();
+      gameUI.showGameArea();
+      updateGameDisplay();
     } else if (!data.gameStarted && document.getElementById('game-area').style.display === 'block') {
       // 如果遊戲還沒開始但已經在遊戲畫面，返回登入畫面
-      console.log('Game not started, showing login'); // 除錯用
-      document.getElementById('login').style.display = 'block';
-      document.getElementById('game-area').style.display = 'none';
+      gameUI.showLoginArea();
     }
   });
 }
 
+// 更新玩家狀態顯示
+function updatePlayerStatus(data) {
+  if (data.playerA && data.playerA.name) {
+    document.getElementById('playerA-section').classList.add('filled');
+    document.getElementById('playerA-status').innerHTML = `✅ ${data.playerA.name} 已加入`;
+    document.getElementById('playerA-name').disabled = true;
+    document.querySelector('#playerA-section button').disabled = true;
+  }
+  
+  if (data.playerB && data.playerB.name) {
+    document.getElementById('playerB-section').classList.add('filled');
+    document.getElementById('playerB-status').innerHTML = `✅ ${data.playerB.name} 已加入`;
+    document.getElementById('playerB-name').disabled = true;
+    document.querySelector('#playerB-section button').disabled = true;
+  }
+}
+
+// 更新開始遊戲按鈕
+function updateStartButton(data) {
+  if (data.playerA && data.playerB && data.playerA.name && data.playerB.name) {
+    document.getElementById('startGame').disabled = false;
+    document.getElementById('startGame').innerHTML = '🚀 開始遊戲（兩人都已就緒）';
+    console.log('Both players joined, start button enabled');
+  } else {
+    document.getElementById('startGame').disabled = true;
+    document.getElementById('startGame').innerHTML = '開始遊戲';
+    console.log('Waiting for players...');
+  }
+}
+
 // 開始遊戲
 async function startGame() {
-  console.log('Start game clicked, current player:', currentPlayer); // 除錯用
+  console.log('Start game clicked, current player:', currentPlayer);
   
   if (!currentPlayer) {
     alert("請先選擇玩家身份");
@@ -257,9 +108,9 @@ async function startGame() {
 
   try {
     // 先載入題目
-    await loadQuestions();
+    await questionsManager.loadQuestions();
     
-    if (questions.length === 0) {
+    if (questionsManager.getQuestionsCount() === 0) {
       alert("沒有可用的題目！");
       return;
     }
@@ -267,17 +118,17 @@ async function startGame() {
     // 檢查當前遊戲狀態
     db.ref('game').once('value', (snapshot) => {
       const data = snapshot.val();
-      console.log('Checking game state before start:', data); // 除錯用
+      console.log('Checking game state before start:', data);
       
       if (!data || !data.playerA || !data.playerB || !data.playerA.name || !data.playerB.name) {
         alert("請等待兩個玩家都加入遊戲！");
         return;
       }
 
-      console.log('Starting game...'); // 除錯用
+      console.log('Starting game...');
       
       // 選擇第一題
-      const firstQuestionIndex = selectRandomQuestion();
+      const firstQuestionIndex = questionsManager.selectRandomQuestion();
       
       // 初始化遊戲狀態
       const initialGameState = {
@@ -300,24 +151,15 @@ async function startGame() {
   }
 }
 
-// 顯示遊戲區域
-function showGameArea() {
-  console.log('Showing game area'); // 除錯用
-  document.getElementById('login').style.display = 'none';
-  document.getElementById('game-area').style.display = 'block';
-  
-  updateGameDisplay();
-}
-
 // 更新遊戲顯示
 function updateGameDisplay() {
   // 確保有題目可用
-  if (questions.length === 0) {
+  if (questionsManager.getQuestionsCount() === 0) {
     console.error('沒有可用的題目');
     return;
   }
 
-  const question = questions[gameState.currentQuestion];
+  const question = questionsManager.getQuestion(gameState.currentQuestion);
   if (!question) {
     console.error('題目不存在:', gameState.currentQuestion);
     return;
@@ -326,78 +168,22 @@ function updateGameDisplay() {
   const isGuesser = currentPlayer === gameState.currentGuesser;
   const isAnswerer = currentPlayer !== gameState.currentGuesser;
   
-  console.log('Updating display - isGuesser:', isGuesser, 'isAnswerer:', isAnswerer); // 除錯用
+  console.log('Updating display - isGuesser:', isGuesser, 'isAnswerer:', isAnswerer);
   
   // 更新分數顯示
-  updateScoreDisplay();
-  
-  // 隱藏所有UI
-  document.getElementById('guesser-ui').style.display = 'none';
-  document.getElementById('answerer-ui').style.display = 'none';
-  document.getElementById('result-display').style.display = 'none';
+  gameUI.updateScoreDisplay(gameState, currentPlayer);
 
   if (gameState.showResult) {
-    showResult();
+    gameUI.showResult(gameState);
     return;
   }
 
   if (isGuesser) {
     // 顯示想想UI
-    document.getElementById('guesser-ui').style.display = 'block';
-    document.getElementById('guesser-question').innerHTML = `題目：${question.question}`;
+    gameUI.showGuesserUI(question);
   } else if (isAnswerer) {
     // 顯示答題者UI
-    document.getElementById('answerer-ui').style.display = 'block';
-    
-    const role = gameState.answererRole;
-    const roleText = role === 'honest' ? '老實人' : '瞎掰人';
-    const roleEmoji = role === 'honest' ? '🙋‍♂️' : '🤥';
-    
-    // 設定角色徽章
-    const roleBadge = document.getElementById('answerer-role-badge');
-    roleBadge.innerHTML = `${roleEmoji} 你是${roleText}`;
-    roleBadge.className = `role-badge ${role}`;
-    
-    // 設定指示文字
-    const instruction = document.getElementById('answerer-instruction');
-    if (role === 'honest') {
-      instruction.innerHTML = '你看得到正確解說，請據實回答！';
-    } else {
-      instruction.innerHTML = '你看不到解說，請發揮創意瞎掰一個答案！';
-    }
-    
-    // 顯示題目
-    document.getElementById('answerer-question').innerHTML = `題目：${question.question}`;
-    
-    // 根據角色顯示解說
-    const explanationEl = document.getElementById('answerer-explanation');
-    if (role === 'honest') {
-      explanationEl.innerHTML = `💡 正確解說：${question.explanation}`;
-      explanationEl.style.display = 'block';
-    } else {
-      explanationEl.style.display = 'none';
-    }
-  }
-}
-
-// 更新分數顯示
-function updateScoreDisplay() {
-  const scores = gameState.scores || { A: 0, B: 0 };
-  const scoreDisplay = document.getElementById('score-display');
-  
-  if (scoreDisplay) {
-    scoreDisplay.innerHTML = `
-      <div class="scores">
-        <div class="score-item">
-          <span class="player-name">${gameState.playerA.name}</span>
-          <span class="score">${scores.A}</span>
-        </div>
-        <div class="score-item">
-          <span class="player-name">${gameState.playerB.name}</span>
-          <span class="score">${scores.B}</span>
-        </div>
-      </div>
-    `;
+    gameUI.showAnswererUI(question, gameState.answererRole);
   }
 }
 
@@ -427,62 +213,17 @@ function makeGuess(guess) {
   });
 }
 
-// 顯示結果
-function showResult() {
-  document.getElementById('guesser-ui').style.display = 'none';
-  document.getElementById('answerer-ui').style.display = 'none';
-  document.getElementById('result-display').style.display = 'block';
-  
-  const correct = gameState.guessResult === 'correct';
-  const roleText = gameState.answererRole === 'honest' ? '老實人' : '瞎掰人';
-  const guessText = gameState.lastGuess === 'honest' ? '老實人' : '瞎掰人';
-  
-  // 獲取玩家名稱和分數
-  const guesserPlayer = gameState.currentGuesser;
-  const answererPlayer = guesserPlayer === 'A' ? 'B' : 'A';
-  const guesserName = gameState[`player${guesserPlayer}`].name;
-  const answererName = gameState[`player${answererPlayer}`].name;
-  const scores = gameState.scores || { A: 0, B: 0 };
-  
-  let resultHTML = '';
-  if (correct) {
-    resultHTML = `
-      <div style="color: #4CAF50; font-size: 24px;">🎉 猜對了！</div>
-      <div><strong>${guesserName}</strong> 猜測：${guessText}</div>
-      <div><strong>${answererName}</strong> 實際角色：${roleText}</div>
-      <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.8); border-radius: 10px;">
-        <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">🏆 目前分數</div>
-        <div><strong>${gameState.playerA.name} (A)</strong>：${scores.A} 分</div>
-        <div><strong>${gameState.playerB.name} (B)</strong>：${scores.B} 分</div>
-      </div>
-    `;
-  } else {
-    resultHTML = `
-      <div style="color: #f44336; font-size: 24px;">❌ 猜錯了！</div>
-      <div><strong>${guesserName}</strong> 猜測：${guessText}</div>
-      <div><strong>${answererName}</strong> 實際角色：${roleText}</div>
-      <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.8); border-radius: 10px;">
-        <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">🏆 目前分數</div>
-        <div><strong>${gameState.playerA.name} (A)</strong>：${scores.A} 分</div>
-        <div><strong>${gameState.playerB.name} (B)</strong>：${scores.B} 分</div>
-      </div>
-    `;
-  }
-  
-  document.getElementById('result-text').innerHTML = resultHTML;
-}
-
 // 下一回合
 function nextRound() {
   // 確保有題目可用
-  if (questions.length === 0) {
+  if (questionsManager.getQuestionsCount() === 0) {
     alert("沒有可用的題目！");
     return;
   }
 
   // 輪換角色，重新分配答題者角色，選擇新題目
   const nextGuesser = gameState.currentGuesser === 'A' ? 'B' : 'A';
-  const nextQuestion = selectRandomQuestion();
+  const nextQuestion = questionsManager.selectRandomQuestion();
   
   db.ref('game').update({
     round: gameState.round + 1,
@@ -497,7 +238,7 @@ function nextRound() {
 
 // 頁面載入時先載入題目
 window.addEventListener('load', () => {
-  loadQuestions().catch(error => {
+  questionsManager.loadQuestions().catch(error => {
     console.error('初始載入題目失敗:', error);
   });
 });
