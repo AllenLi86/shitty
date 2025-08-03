@@ -102,9 +102,14 @@ function listenToGameState() {
       gameState = data;
       gameUI.showGameArea();
       updateGameDisplay();
-    } else if (!data.gameStarted && !data.gameEnded && document.getElementById('game-area').style.display === 'block') {
-      // 如果遊戲還沒開始且沒結束但已經在遊戲畫面，返回登入畫面
-      gameUI.showLoginArea();
+    } else if ((!data.gameStarted || data.gameStarted === false) && (!data.gameEnded || data.gameEnded === false)) {
+      // 遊戲尚未開始或已重置
+      if (document.getElementById('game-area').style.display === 'block') {
+        console.log('Game reset or not started, showing login');
+        gameUI.showLoginArea();
+        // 清除本地狀態
+        gameState = null;
+      }
     }
   });
 }
@@ -196,6 +201,12 @@ async function startGame() {
 
 // 更新遊戲顯示
 function updateGameDisplay() {
+  // 確保遊戲狀態存在且有效
+  if (!gameState) {
+    console.log('⚠️ 遊戲狀態不存在，無法更新顯示');
+    return;
+  }
+
   // 確保有題目可用
   if (questionsManager.getQuestionsCount() === 0) {
     console.error('沒有可用的題目');
@@ -203,16 +214,28 @@ function updateGameDisplay() {
   }
 
   // 優先檢查遊戲是否結束
-  if (gameState.gameEnded) {
+  if (gameState.gameEnded === true) {
     console.log('遊戲已結束，顯示結算頁面');
     gameUI.showGameEnd(gameState, currentPlayer);
     return;
   }
 
+  // 檢查遊戲是否尚未開始或已重置
+  if (gameState.gameStarted !== true) {
+    console.log('遊戲尚未開始或已重置');
+    return;
+  }
+
   // 檢查是否要顯示結果
-  if (gameState.showResult) {
+  if (gameState.showResult === true) {
     console.log('顯示回合結果');
     gameUI.showResult(gameState);
+    return;
+  }
+
+  // 檢查當前題目是否有效
+  if (gameState.currentQuestion === null || gameState.currentQuestion === undefined) {
+    console.log('⚠️ 當前題目索引無效:', gameState.currentQuestion);
     return;
   }
 
@@ -335,7 +358,9 @@ function newGame() {
     return;
   }
 
-  // 重置遊戲狀態，保留玩家資訊但重置分數
+  console.log('🧹 正在清除舊遊戲狀態...');
+
+  // 完全重置遊戲狀態，保留玩家資訊但清除所有遊戲相關資料
   db.ref('game').update({
     gameStarted: false,
     gameEnded: false,
@@ -346,16 +371,26 @@ function newGame() {
     currentQuestion: null,
     answererRole: null,
     lastGuess: null,
-    guessResult: null
+    guessResult: null,
+    // 確保移除任何可能殘留的狀態
+    usedQuestions: null
+  }).then(() => {
+    console.log('✅ Firebase 狀態已重置');
+    
+    // 重置題目使用記錄
+    questionsManager.resetUsedQuestions();
+    
+    // 清除本地遊戲狀態
+    gameState = null;
+    
+    // 回到登入畫面
+    gameUI.showLoginArea();
+    
+    console.log('🎯 新遊戲重置完成');
+  }).catch(error => {
+    console.error('❌ 重置遊戲狀態失敗:', error);
+    alert('重置遊戲失敗，請稍後再試！');
   });
-
-  // 重置題目使用記錄
-  questionsManager.resetUsedQuestions();
-  
-  // 回到登入畫面
-  gameUI.showLoginArea();
-  
-  console.log('新遊戲已重置');
 }
 
 // 頁面載入時先載入題目
