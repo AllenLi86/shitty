@@ -18,8 +18,26 @@ const GAME_CONFIG = {
   // 題目類型出現機率 (why題目 : term題目)
   typeRatio: { why: 0.45, term: 0.55 },
   
+  // 角色分配機率 (老實人 : 瞎掰人)
+  roleRatio: { honest: 0.5, liar: 0.5 },
+  
   // 降低重複機率的設定
-  recentQuestionsLimit: 5 // 最近幾題不會重複
+  recentQuestionsLimit: 5, // 最近幾題不會重複
+  
+  // 計分邏輯設定
+  scoring: {
+    // 想想猜對老實人時的得分
+    guesserCorrectHonest: { guesser: 1, answerer: 0 },
+    
+    // 想想猜錯老實人時的得分變化
+    guesserWrongHonest: { guesser: -1, answerer: -1 },
+    
+    // 想想猜對瞎掰人時的得分
+    guesserCorrectLiar: { guesser: 1, answerer: 0 },
+    
+    // 想想猜錯瞎掰人時的得分變化（瞎掰人成功騙到想想）
+    guesserWrongLiar: { guesser: 0, answerer: 2 }
+  }
 };
 
 // 遊戲狀態
@@ -28,7 +46,36 @@ let gameState = null;
 let questions = []; // 從 Firebase 載入的題目
 let recentQuestions = []; // 最近使用過的題目索引
 
-// 載入題目從 Firebase
+// 計算分數變化
+function calculateScoreChange(guessResult, answererRole) {
+  const config = GAME_CONFIG.scoring;
+  
+  if (answererRole === 'honest') {
+    // 答題者是老實人
+    if (guessResult === 'correct') {
+      // 想想猜對老實人
+      return config.guesserCorrectHonest;
+    } else {
+      // 想想猜錯老實人
+      return config.guesserWrongHonest;
+    }
+  } else {
+    // 答題者是瞎掰人
+    if (guessResult === 'correct') {
+      // 想想猜對瞎掰人
+      return config.guesserCorrectLiar;
+    } else {
+      // 想想猜錯瞎掰人（瞎掰人成功騙到想想）
+      return config.guesserWrongLiar;
+    }
+  }
+}
+
+// 根據機率分配角色
+function assignAnswererRole() {
+  const random = Math.random();
+  return random < GAME_CONFIG.roleRatio.honest ? 'honest' : 'liar';
+}
 function loadQuestions() {
   return new Promise((resolve, reject) => {
     db.ref('questions').once('value', (snapshot) => {
@@ -239,8 +286,10 @@ async function startGame() {
         round: 1,
         currentGuesser: 'A', // A先當想想
         currentQuestion: firstQuestionIndex,
-        answererRole: Math.random() < 0.5 ? 'honest' : 'liar', // 隨機分配答題者的角色
-        showResult: false
+        answererRole: assignAnswererRole(), // 使用機率分配角色
+        showResult: false,
+        // 初始化分數
+        scores: { A: 0, B: 0 }
       };
 
       db.ref('game').set(initialGameState); // 使用 set 而不是 update 確保數據完整
@@ -278,6 +327,9 @@ function updateGameDisplay() {
   const isAnswerer = currentPlayer !== gameState.currentGuesser;
   
   console.log('Updating display - isGuesser:', isGuesser, 'isAnswerer:', isAnswerer); // 除錯用
+  
+  // 更新分數顯示
+  updateScoreDisplay();
   
   // 隱藏所有UI
   document.getElementById('guesser-ui').style.display = 'none';
@@ -328,14 +380,49 @@ function updateGameDisplay() {
   }
 }
 
+// 更新分數顯示
+function updateScoreDisplay() {
+  const scores = gameState.scores || { A: 0, B: 0 };
+  const scoreDisplay = document.getElementById('score-display');
+  
+  if (scoreDisplay) {
+    scoreDisplay.innerHTML = `
+      <div class="scores">
+        <div class="score-item">
+          <span class="player-name">${gameState.playerA.name}</span>
+          <span class="score">${scores.A}</span>
+        </div>
+        <div class="score-item">
+          <span class="player-name">${gameState.playerB.name}</span>
+          <span class="score">${scores.B}</span>
+        </div>
+      </div>
+    `;
+  }
+}
+
 // 做出猜測
 function makeGuess(guess) {
   const correct = guess === gameState.answererRole;
+  
+  // 計算分數變化
+  const scoreChange = calculateScoreChange(correct ? 'correct' : 'wrong', gameState.answererRole);
+  
+  // 計算新分數
+  const newScores = { ...gameState.scores };
+  const guesserPlayer = gameState.currentGuesser;
+  const answererPlayer = guesserPlayer === 'A' ? 'B' : 'A';
+  
+  newScores[guesserPlayer] += scoreChange.guesser;
+  newScores[answererPlayer] += scoreChange.answerer;
+  
+  console.log('分數變化:', scoreChange, '新分數:', newScores);
   
   // 更新遊戲狀態，顯示結果
   db.ref('game').update({
     lastGuess: guess,
     guessResult: correct ? 'correct' : 'wrong',
+    scores: newScores,
     showResult: true
   });
 }
@@ -350,18 +437,35 @@ function showResult() {
   const roleText = gameState.answererRole === 'honest' ? '老實人' : '瞎掰人';
   const guessText = gameState.lastGuess === 'honest' ? '老實人' : '瞎掰人';
   
+  // 獲取玩家名稱和分數
+  const guesserPlayer = gameState.currentGuesser;
+  const answererPlayer = guesserPlayer === 'A' ? 'B' : 'A';
+  const guesserName = gameState[`player${guesserPlayer}`].name;
+  const answererName = gameState[`player${answererPlayer}`].name;
+  const scores = gameState.scores || { A: 0, B: 0 };
+  
   let resultHTML = '';
   if (correct) {
     resultHTML = `
       <div style="color: #4CAF50; font-size: 24px;">🎉 猜對了！</div>
-      <div>想想猜測：${guessText}</div>
-      <div>實際角色：${roleText}</div>
+      <div><strong>${guesserName}</strong> 猜測：${guessText}</div>
+      <div><strong>${answererName}</strong> 實際角色：${roleText}</div>
+      <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.8); border-radius: 10px;">
+        <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">🏆 目前分數</div>
+        <div><strong>${gameState.playerA.name} (A)</strong>：${scores.A} 分</div>
+        <div><strong>${gameState.playerB.name} (B)</strong>：${scores.B} 分</div>
+      </div>
     `;
   } else {
     resultHTML = `
       <div style="color: #f44336; font-size: 24px;">❌ 猜錯了！</div>
-      <div>想想猜測：${guessText}</div>
-      <div>實際角色：${roleText}</div>
+      <div><strong>${guesserName}</strong> 猜測：${guessText}</div>
+      <div><strong>${answererName}</strong> 實際角色：${roleText}</div>
+      <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.8); border-radius: 10px;">
+        <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">🏆 目前分數</div>
+        <div><strong>${gameState.playerA.name} (A)</strong>：${scores.A} 分</div>
+        <div><strong>${gameState.playerB.name} (B)</strong>：${scores.B} 分</div>
+      </div>
     `;
   }
   
@@ -384,7 +488,7 @@ function nextRound() {
     round: gameState.round + 1,
     currentGuesser: nextGuesser,
     currentQuestion: nextQuestion,
-    answererRole: Math.random() < 0.5 ? 'honest' : 'liar',
+    answererRole: assignAnswererRole(), // 使用機率分配角色
     showResult: false,
     lastGuess: null,
     guessResult: null
