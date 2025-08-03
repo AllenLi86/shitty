@@ -66,23 +66,30 @@ function listenToGameState() {
     const data = snapshot.val();
     if (!data) return;
 
+    // 更新玩家狀態顯示
+    if (data.playerA) {
+      document.getElementById('playerA-section').classList.add('filled');
+      document.getElementById('playerA-status').innerHTML = `✅ ${data.playerA.name} 已加入`;
+      // 禁用玩家A的輸入框和按鈕
+      document.getElementById('playerA-name').disabled = true;
+      document.querySelector('#playerA-section button').disabled = true;
+    }
+    if (data.playerB) {
+      document.getElementById('playerB-section').classList.add('filled');
+      document.getElementById('playerB-status').innerHTML = `✅ ${data.playerB.name} 已加入`;
+      // 禁用玩家B的輸入框和按鈕
+      document.getElementById('playerB-name').disabled = true;
+      document.querySelector('#playerB-section button').disabled = true;
+    }
+
     // 檢查兩個玩家是否都已加入
     if (data.playerA && data.playerB) {
       document.getElementById('startGame').disabled = false;
-      
-      // 更新玩家狀態顯示
-      if (data.playerA) {
-        document.getElementById('playerA-section').classList.add('filled');
-        document.getElementById('playerA-status').innerHTML = `✅ ${data.playerA.name} 已加入`;
-      }
-      if (data.playerB) {
-        document.getElementById('playerB-section').classList.add('filled');
-        document.getElementById('playerB-status').innerHTML = `✅ ${data.playerB.name} 已加入`;
-      }
+      document.getElementById('startGame').innerHTML = '🚀 開始遊戲（兩人都已就緒）';
     }
 
-    // 如果遊戲已開始
-    if (data.gameStarted && currentPlayer) {
+    // 只有當遊戲明確開始且兩個玩家都在時才進入遊戲畫面
+    if (data.gameStarted && data.playerA && data.playerB && currentPlayer) {
       gameState = data;
       showGameArea();
     }
@@ -96,17 +103,26 @@ function startGame() {
     return;
   }
 
-  // 初始化遊戲狀態
-  const initialGameState = {
-    gameStarted: true,
-    round: 1,
-    currentGuesser: 'A', // A先當想想
-    currentQuestion: 0,
-    answererRole: Math.random() < 0.5 ? 'honest' : 'liar', // 隨機分配答題者的角色
-    showResult: false
-  };
+  // 檢查兩個玩家是否都已加入
+  db.ref('game').once('value', (snapshot) => {
+    const data = snapshot.val();
+    if (!data || !data.playerA || !data.playerB) {
+      alert("請等待兩個玩家都加入遊戲！");
+      return;
+    }
 
-  db.ref('game').update(initialGameState);
+    // 初始化遊戲狀態
+    const initialGameState = {
+      gameStarted: true,
+      round: 1,
+      currentGuesser: 'A', // A先當想想
+      currentQuestion: 0,
+      answererRole: Math.random() < 0.5 ? 'honest' : 'liar', // 隨機分配答題者的角色
+      showResult: false
+    };
+
+    db.ref('game').update(initialGameState);
+  });
 }
 
 // 顯示遊戲區域

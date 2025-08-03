@@ -88,6 +88,21 @@ button:disabled {
   transform: none;
 }
 
+#startGame {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  font-size: 16px;
+  padding: 15px 30px;
+  margin-top: 20px;
+}
+
+#startGame:disabled {
+  background: #cccccc;
+}
+
+#startGame:not(:disabled):hover {
+  background: linear-gradient(135deg, #45a049, #3d8b40);
+}
+
 /* 遊戲區域 */
 .game-area {
   min-height: 400px;
