@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+// 取消編輯
+    function cancelEdit(index) {
+      const item = document.getElementById(`question<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -45,13 +47,18 @@
       color: #333;
     }
 
-    input[type="text"], textarea {
+    input[type="text"], textarea, select {
       width: 100%;
       padding: 12px;
       border: 2px solid #ddd;
       border-radius: 8px;
       font-size: 14px;
       box-sizing: border-box;
+    }
+
+    select {
+      background-color: white;
+      cursor: pointer;
     }
 
     textarea {
@@ -128,7 +135,26 @@
       font-size: 18px;
       font-weight: bold;
       color: #333;
+      margin-bottom: 5px;
+    }
+
+    .question-type {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 15px;
+      font-size: 12px;
+      font-weight: bold;
       margin-bottom: 10px;
+    }
+
+    .question-type.why {
+      background-color: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .question-type.term {
+      background-color: #f3e5f5;
+      color: #7b1fa2;
     }
 
     .explanation-text {
@@ -195,6 +221,7 @@
     <div class="stats">
       <h3>📊 目前題庫統計</h3>
       <div id="questionsCount">載入中...</div>
+      <div id="typeDistribution" style="margin-top: 10px;"></div>
     </div>
 
     <div class="add-section">
@@ -203,6 +230,14 @@
         <div class="form-group">
           <label for="newQuestion">題目：</label>
           <input type="text" id="newQuestion" placeholder="輸入問題..." required>
+        </div>
+        <div class="form-group">
+          <label for="newType">題目類型：</label>
+          <select id="newType" required>
+            <option value="">選擇類型</option>
+            <option value="why">Why 題型（為什麼...？）</option>
+            <option value="term">Term 題型（什麼是...？）</option>
+          </select>
         </div>
         <div class="form-group">
           <label for="newExplanation">正確解說：</label>
@@ -269,8 +304,19 @@
 
     // 更新題目數量統計
     function updateQuestionsCount() {
+      const whyCount = questions.filter(q => q.type === 'why').length;
+      const termCount = questions.filter(q => q.type === 'term').length;
+      const unknownCount = questions.filter(q => !q.type || (q.type !== 'why' && q.type !== 'term')).length;
+      
       document.getElementById('questionsCount').innerHTML = 
         `共有 <strong>${questions.length}</strong> 題`;
+      
+      let distributionHTML = '';
+      if (whyCount > 0) distributionHTML += `<span style="color: #1976d2;">Why: ${whyCount}題</span> `;
+      if (termCount > 0) distributionHTML += `<span style="color: #7b1fa2;">Term: ${termCount}題</span> `;
+      if (unknownCount > 0) distributionHTML += `<span style="color: #f57c00;">未分類: ${unknownCount}題</span>`;
+      
+      document.getElementById('typeDistribution').innerHTML = distributionHTML;
     }
 
     // 顯示題目列表
@@ -282,10 +328,15 @@
         return;
       }
 
-      listDiv.innerHTML = questions.map((q, index) => `
+      listDiv.innerHTML = questions.map((q, index) => {
+        const typeClass = q.type || 'unknown';
+        const typeText = q.type === 'why' ? 'Why' : q.type === 'term' ? 'Term' : '未分類';
+        
+        return `
         <div class="question-item" id="question-${index}">
           <div class="question-display">
             <div class="question-text">Q${index + 1}: ${q.question}</div>
+            <div class="question-type ${typeClass}">${typeText}</div>
             <div class="explanation-text">💡 ${q.explanation}</div>
             <div class="question-actions">
               <button class="edit-btn" onclick="startEdit(${index})">編輯</button>
@@ -299,6 +350,13 @@
               <input type="text" id="edit-question-${index}" value="${q.question}">
             </div>
             <div class="form-group">
+              <label>題目類型：</label>
+              <select id="edit-type-${index}">
+                <option value="why" ${q.type === 'why' ? 'selected' : ''}>Why 題型（為什麼...？）</option>
+                <option value="term" ${q.type === 'term' ? 'selected' : ''}>Term 題型（什麼是...？）</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label>正確解說：</label>
               <textarea id="edit-explanation-${index}">${q.explanation}</textarea>
             </div>
@@ -306,7 +364,7 @@
             <button class="cancel-btn" onclick="cancelEdit(${index})">取消</button>
           </div>
         </div>
-      `).join('');
+      `}).join('');
     }
 
     // 新增題目
@@ -315,13 +373,14 @@
       
       const question = document.getElementById('newQuestion').value.trim();
       const explanation = document.getElementById('newExplanation').value.trim();
+      const type = document.getElementById('newType').value;
       
-      if (!question || !explanation) {
-        showMessage('請填寫完整的題目和解說！', 'error');
+      if (!question || !explanation || !type) {
+        showMessage('請填寫完整的題目、解說和類型！', 'error');
         return;
       }
 
-      const newQuestion = { question, explanation };
+      const newQuestion = { question, explanation, type };
       questions.push(newQuestion);
       
       showMessage('儲存中...', 'loading');
@@ -354,25 +413,28 @@
       // 重置表單
       document.getElementById(`edit-question-${index}`).value = questions[index].question;
       document.getElementById(`edit-explanation-${index}`).value = questions[index].explanation;
+      document.getElementById(`edit-type-${index}`).value = questions[index].type || 'why';
     }
 
     // 儲存編輯
     function saveEdit(index) {
       const question = document.getElementById(`edit-question-${index}`).value.trim();
       const explanation = document.getElementById(`edit-explanation-${index}`).value.trim();
+      const type = document.getElementById(`edit-type-${index}`).value;
       
-      if (!question || !explanation) {
-        showMessage('請填寫完整的題目和解說！', 'error');
+      if (!question || !explanation || !type) {
+        showMessage('請填寫完整的題目、解說和類型！', 'error');
         return;
       }
 
-      questions[index] = { question, explanation };
+      questions[index] = { question, explanation, type };
       
       showMessage('儲存中...', 'loading');
       
       db.ref('questions').set(questions).then(() => {
         showMessage('題目更新成功！');
         cancelEdit(index);
+        updateQuestionsCount();
         displayQuestions();
       }).catch(error => {
         console.error('更新失敗:', error);

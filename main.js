@@ -13,10 +13,20 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// 遊戲設定
+const GAME_CONFIG = {
+  // 題目類型出現機率 (why題目 : term題目)
+  typeRatio: { why: 0.45, term: 0.55 },
+  
+  // 降低重複機率的設定
+  recentQuestionsLimit: 5 // 最近幾題不會重複
+};
+
 // 遊戲狀態
 let currentPlayer = null;
 let gameState = null;
 let questions = []; // 從 Firebase 載入的題目
+let recentQuestions = []; // 最近使用過的題目索引
 
 // 載入題目從 Firebase
 function loadQuestions() {
@@ -26,6 +36,12 @@ function loadQuestions() {
       if (data && Array.isArray(data)) {
         questions = data;
         console.log('題目已載入:', questions.length, '題');
+        
+        // 統計題目類型
+        const whyCount = questions.filter(q => q.type === 'why').length;
+        const termCount = questions.filter(q => q.type === 'term').length;
+        console.log(`題目分布 - why: ${whyCount}題, term: ${termCount}題`);
+        
         resolve(questions);
       } else {
         console.log('沒有找到題目，使用預設題目');
@@ -33,7 +49,8 @@ function loadQuestions() {
         questions = [
           {
             question: "為什麼企鵝不會飛？",
-            explanation: "企鵝的祖先原本會飛，但為了適應水中生活，翅膀演化成了更適合游泳的鰭狀肢。牠們的骨骼也變得更重，以便在水中保持穩定。"
+            explanation: "企鵝的祖先原本會飛，但為了適應水中生活，翅膀演化成了更適合游泳的鰭狀肢。牠們的骨骼也變得更重，以便在水中保持穩定。",
+            type: "why"
           }
         ];
         resolve(questions);
@@ -43,6 +60,65 @@ function loadQuestions() {
       reject(error);
     });
   });
+}
+
+// 智能選擇題目
+function selectRandomQuestion() {
+  if (questions.length === 0) return null;
+  
+  // 如果題目總數不多，就簡單隨機選擇
+  if (questions.length <= GAME_CONFIG.recentQuestionsLimit) {
+    return Math.floor(Math.random() * questions.length);
+  }
+  
+  // 根據設定的機率決定要選擇哪種類型的題目
+  const whyQuestions = questions.map((q, i) => ({ ...q, index: i })).filter(q => q.type === 'why');
+  const termQuestions = questions.map((q, i) => ({ ...q, index: i })).filter(q => q.type === 'term');
+  
+  let selectedType;
+  const random = Math.random();
+  
+  if (random < GAME_CONFIG.typeRatio.why) {
+    selectedType = 'why';
+  } else {
+    selectedType = 'term';
+  }
+  
+  // 獲取對應類型的題目，排除最近使用過的
+  let availableQuestions;
+  if (selectedType === 'why') {
+    availableQuestions = whyQuestions.filter(q => !recentQuestions.includes(q.index));
+  } else {
+    availableQuestions = termQuestions.filter(q => !recentQuestions.includes(q.index));
+  }
+  
+  // 如果該類型沒有可用題目，則從另一類型選擇
+  if (availableQuestions.length === 0) {
+    if (selectedType === 'why') {
+      availableQuestions = termQuestions.filter(q => !recentQuestions.includes(q.index));
+    } else {
+      availableQuestions = whyQuestions.filter(q => !recentQuestions.includes(q.index));
+    }
+  }
+  
+  // 如果所有題目都在最近使用過，清空記錄重新開始
+  if (availableQuestions.length === 0) {
+    recentQuestions = [];
+    availableQuestions = selectedType === 'why' ? whyQuestions : termQuestions;
+  }
+  
+  // 隨機選擇一題
+  const selectedQuestion = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+  const questionIndex = selectedQuestion.index;
+  
+  // 更新最近使用記錄
+  recentQuestions.push(questionIndex);
+  if (recentQuestions.length > GAME_CONFIG.recentQuestionsLimit) {
+    recentQuestions.shift(); // 移除最舊的記錄
+  }
+  
+  console.log(`選擇了 ${selectedType} 類型題目 (索引: ${questionIndex}): ${questions[questionIndex].question}`);
+  return questionIndex;
 }
 
 // 加入遊戲
@@ -153,13 +229,16 @@ async function startGame() {
 
       console.log('Starting game...'); // 除錯用
       
+      // 選擇第一題
+      const firstQuestionIndex = selectRandomQuestion();
+      
       // 初始化遊戲狀態
       const initialGameState = {
         ...data, // 保留現有的玩家資訊
         gameStarted: true, // 重要：設置遊戲開始標記
         round: 1,
         currentGuesser: 'A', // A先當想想
-        currentQuestion: 0,
+        currentQuestion: firstQuestionIndex,
         answererRole: Math.random() < 0.5 ? 'honest' : 'liar', // 隨機分配答題者的角色
         showResult: false
       };
@@ -189,7 +268,12 @@ function updateGameDisplay() {
     return;
   }
 
-  const question = questions[gameState.currentQuestion % questions.length]; // 使用模運算避免超出範圍
+  const question = questions[gameState.currentQuestion];
+  if (!question) {
+    console.error('題目不存在:', gameState.currentQuestion);
+    return;
+  }
+  
   const isGuesser = currentPlayer === gameState.currentGuesser;
   const isAnswerer = currentPlayer !== gameState.currentGuesser;
   
@@ -292,9 +376,9 @@ function nextRound() {
     return;
   }
 
-  // 輪換角色，重新分配答題者角色
+  // 輪換角色，重新分配答題者角色，選擇新題目
   const nextGuesser = gameState.currentGuesser === 'A' ? 'B' : 'A';
-  const nextQuestion = (gameState.currentQuestion + 1) % questions.length;
+  const nextQuestion = selectRandomQuestion();
   
   db.ref('game').update({
     round: gameState.round + 1,
