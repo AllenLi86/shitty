@@ -17,7 +17,7 @@ let playerName = "";
 let myRole = "";
 let isJudge = false;
 
-window.joinGame = joinGame;
+// window.joinGame = joinGame;
 
 const questions = [
   { q: "貓為什麼會發出呼嚕聲？", a: "因為它們放鬆快樂" },

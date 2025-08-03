@@ -3,12 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <title>瞎掰王 雙人互動測試版</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
-  <script defer src="main.js"></script>
+  <!-- Firebase App (核心 SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+
+  <!-- Firebase Database -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <!-- 你自己的主程式 -->
+  <script src="main.js" defer></script>
 </head>
 <body>
-  <h1>👑 瞎掰王（雙人同步測試）</h1>
+  <h1>👑 瞎掰王（雙人同步測試）v0.1.1</h1>
 
   <div id="login">
     <label>你的名稱：</label><input id="nameInput">
