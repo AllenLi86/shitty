@@ -51,69 +51,91 @@ function joinAsPlayer(player) {
     joinedAt: Date.now()
   });
 
-  // 更新UI
+  // 立即更新當前玩家的UI
   document.getElementById(`player${player}-section`).classList.add('filled');
   document.getElementById(`player${player}-status`).innerHTML = `✅ ${name} 已加入`;
   nameInput.disabled = true;
+  document.querySelector(`#player${player}-section button`).disabled = true;
   
-  // 監聽遊戲狀態
-  listenToGameState();
+  // 開始監聽遊戲狀態（只監聽一次）
+  if (!gameState) {
+    listenToGameState();
+  }
 }
 
 // 監聽遊戲狀態
 function listenToGameState() {
   db.ref('game').on('value', (snapshot) => {
     const data = snapshot.val();
+    console.log('Firebase data:', data); // 除錯用
+    
     if (!data) return;
 
     // 更新玩家狀態顯示
-    if (data.playerA) {
+    if (data.playerA && data.playerA.name) {
       document.getElementById('playerA-section').classList.add('filled');
       document.getElementById('playerA-status').innerHTML = `✅ ${data.playerA.name} 已加入`;
-      // 禁用玩家A的輸入框和按鈕
       document.getElementById('playerA-name').disabled = true;
       document.querySelector('#playerA-section button').disabled = true;
     }
-    if (data.playerB) {
+    
+    if (data.playerB && data.playerB.name) {
       document.getElementById('playerB-section').classList.add('filled');
       document.getElementById('playerB-status').innerHTML = `✅ ${data.playerB.name} 已加入`;
-      // 禁用玩家B的輸入框和按鈕
       document.getElementById('playerB-name').disabled = true;
       document.querySelector('#playerB-section button').disabled = true;
     }
 
     // 檢查兩個玩家是否都已加入
-    if (data.playerA && data.playerB) {
+    if (data.playerA && data.playerB && data.playerA.name && data.playerB.name) {
       document.getElementById('startGame').disabled = false;
       document.getElementById('startGame').innerHTML = '🚀 開始遊戲（兩人都已就緒）';
+      console.log('Both players joined, start button enabled'); // 除錯用
+    } else {
+      document.getElementById('startGame').disabled = true;
+      document.getElementById('startGame').innerHTML = '開始遊戲';
+      console.log('Waiting for players...'); // 除錯用
     }
 
-    // 只有當遊戲明確開始且兩個玩家都在時才進入遊戲畫面
-    if (data.gameStarted && data.playerA && data.playerB && currentPlayer) {
+    // 重要：只有當遊戲明確開始 (gameStarted: true) 且當前用戶已選擇角色時才進入遊戲畫面
+    if (data.gameStarted === true && currentPlayer && data.playerA && data.playerB) {
+      console.log('Game started, showing game area'); // 除錯用
       gameState = data;
       showGameArea();
+    } else if (!data.gameStarted && document.getElementById('game-area').style.display === 'block') {
+      // 如果遊戲還沒開始但已經在遊戲畫面，返回登入畫面
+      console.log('Game not started, showing login'); // 除錯用
+      document.getElementById('login').style.display = 'block';
+      document.getElementById('game-area').style.display = 'none';
     }
   });
 }
 
 // 開始遊戲
 function startGame() {
+  console.log('Start game clicked, current player:', currentPlayer); // 除錯用
+  
   if (!currentPlayer) {
     alert("請先選擇玩家身份");
     return;
   }
 
-  // 檢查兩個玩家是否都已加入
+  // 檢查當前遊戲狀態
   db.ref('game').once('value', (snapshot) => {
     const data = snapshot.val();
-    if (!data || !data.playerA || !data.playerB) {
+    console.log('Checking game state before start:', data); // 除錯用
+    
+    if (!data || !data.playerA || !data.playerB || !data.playerA.name || !data.playerB.name) {
       alert("請等待兩個玩家都加入遊戲！");
       return;
     }
 
+    console.log('Starting game...'); // 除錯用
+    
     // 初始化遊戲狀態
     const initialGameState = {
-      gameStarted: true,
+      ...data, // 保留現有的玩家資訊
+      gameStarted: true, // 重要：設置遊戲開始標記
       round: 1,
       currentGuesser: 'A', // A先當想想
       currentQuestion: 0,
@@ -121,12 +143,13 @@ function startGame() {
       showResult: false
     };
 
-    db.ref('game').update(initialGameState);
+    db.ref('game').set(initialGameState); // 使用 set 而不是 update 確保數據完整
   });
 }
 
 // 顯示遊戲區域
 function showGameArea() {
+  console.log('Showing game area'); // 除錯用
   document.getElementById('login').style.display = 'none';
   document.getElementById('game-area').style.display = 'block';
   
@@ -138,6 +161,8 @@ function updateGameDisplay() {
   const question = testQuestions[gameState.currentQuestion];
   const isGuesser = currentPlayer === gameState.currentGuesser;
   const isAnswerer = currentPlayer !== gameState.currentGuesser;
+  
+  console.log('Updating display - isGuesser:', isGuesser, 'isAnswerer:', isAnswerer); // 除錯用
   
   // 隱藏所有UI
   document.getElementById('guesser-ui').style.display = 'none';
