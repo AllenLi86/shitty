@@ -1,36 +1,3 @@
-// 更新遊戲顯示
-function updateGameDisplay() {
-  // 確保有題目可用
-  if (questionsManager.getQuestionsCount() === 0) {
-    console.error('沒有可用的題目');
-    return;
-  }
-
-  const question = questionsManager.getQuestion(gameState.currentQuestion);
-  if (!question) {
-    console.error('題目不存在:', gameState.currentQuestion);
-    return;
-  }
-  
-  const isGuesser = currentPlayer === gameState.currentGuesser;
-  const isAnswerer = currentPlayer !== gameState.currentGuesser;
-  
-  console.log('Updating display - isGuesser:', isGuesser, 'isAnswerer:', isAnswerer);
-  
-  // 更新分數顯示
-  gameUI.updateScoreDisplay(gameState, currentPlayer);
-
-  if (gameState.gameEnded) {
-    gameUI.showGameEnd(gameState, currentPlayer);
-    return;
-  }
-
-  if (gameState.showResult) {
-    gameUI.showResult(gameState);
-    return;
-  }
-}
-
 // 初始化 Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
@@ -209,6 +176,7 @@ async function startGame() {
       const initialGameState = {
         ...data, // 保留現有的玩家資訊
         gameStarted: true, // 重要：設置遊戲開始標記
+        gameEnded: false, // 確保遊戲未結束
         round: 1,
         currentGuesser: 'A', // A先當想想
         currentQuestion: firstQuestionIndex,
@@ -234,6 +202,20 @@ function updateGameDisplay() {
     return;
   }
 
+  // 優先檢查遊戲是否結束
+  if (gameState.gameEnded) {
+    console.log('遊戲已結束，顯示結算頁面');
+    gameUI.showGameEnd(gameState, currentPlayer);
+    return;
+  }
+
+  // 檢查是否要顯示結果
+  if (gameState.showResult) {
+    console.log('顯示回合結果');
+    gameUI.showResult(gameState);
+    return;
+  }
+
   const question = questionsManager.getQuestion(gameState.currentQuestion);
   if (!question) {
     console.error('題目不存在:', gameState.currentQuestion);
@@ -247,11 +229,6 @@ function updateGameDisplay() {
   
   // 更新分數顯示
   gameUI.updateScoreDisplay(gameState, currentPlayer);
-
-  if (gameState.showResult) {
-    gameUI.showResult(gameState);
-    return;
-  }
 
   if (isGuesser) {
     // 顯示想想UI
@@ -311,6 +288,76 @@ function nextRound() {
   });
 }
 
+// 結束遊戲
+function endGame() {
+  console.log('🎯 結束遊戲按鈕被點擊了！');
+  
+  if (!gameState) {
+    console.log('❌ 遊戲狀態不存在');
+    alert("遊戲尚未開始！");
+    return;
+  }
+
+  console.log('📊 當前遊戲狀態:', gameState);
+  console.log('🔢 當前回合數:', gameState.round);
+  console.log('⚡ 最少回合數要求:', GAME_CONFIG.game.minimumRounds);
+
+  if (gameState.round < GAME_CONFIG.game.minimumRounds) {
+    alert(`至少需要進行 ${GAME_CONFIG.game.minimumRounds} 回合才能結算！`);
+    return;
+  }
+
+  console.log('✅ 正在結算遊戲...');
+  
+  // 更新遊戲狀態為結束
+  const updateData = {
+    gameEnded: true,
+    gameStarted: false,
+    showResult: false
+  };
+  
+  console.log('📤 準備更新的資料:', updateData);
+  
+  db.ref('game').update(updateData).then(() => {
+    console.log('✅ 遊戲狀態已更新為結束');
+  }).catch(error => {
+    console.error('❌ 更新遊戲狀態失敗:', error);
+    alert('結算遊戲失敗，請稍後再試！');
+  });
+}
+
+// 開新遊戲
+function newGame() {
+  console.log('🎮 開新遊戲按鈕被點擊了！');
+  
+  if (!currentPlayer) {
+    alert("請先選擇玩家身份");
+    return;
+  }
+
+  // 重置遊戲狀態，保留玩家資訊但重置分數
+  db.ref('game').update({
+    gameStarted: false,
+    gameEnded: false,
+    round: 1,
+    scores: { A: 0, B: 0 },
+    showResult: false,
+    currentGuesser: null,
+    currentQuestion: null,
+    answererRole: null,
+    lastGuess: null,
+    guessResult: null
+  });
+
+  // 重置題目使用記錄
+  questionsManager.resetUsedQuestions();
+  
+  // 回到登入畫面
+  gameUI.showLoginArea();
+  
+  console.log('新遊戲已重置');
+}
+
 // 頁面載入時先載入題目
 window.addEventListener('load', () => {
   questionsManager.loadQuestions().catch(error => {
@@ -318,8 +365,15 @@ window.addEventListener('load', () => {
   });
 });
 
-// 綁定到 window
+// 綁定到 window（這很重要！）
 window.joinAsPlayer = joinAsPlayer;
 window.startGame = startGame;
 window.makeGuess = makeGuess;
 window.nextRound = nextRound;
+window.endGame = endGame;
+window.newGame = newGame;
+
+// 除錯用：確認函數有正確綁定
+console.log('🔗 函數綁定檢查:');
+console.log('endGame:', typeof window.endGame);
+console.log('newGame:', typeof window.newGame);
