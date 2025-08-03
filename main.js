@@ -16,22 +16,34 @@ const db = firebase.database();
 // 遊戲狀態
 let currentPlayer = null;
 let gameState = null;
+let questions = []; // 從 Firebase 載入的題目
 
-// 測試題目和解說
-const testQuestions = [
-  {
-    question: "為什麼企鵝不會飛？",
-    explanation: "企鵝的祖先原本會飛，但為了適應水中生活，翅膀演化成了更適合游泳的鰭狀肢。牠們的骨骼也變得更重，以便在水中保持穩定。"
-  },
-  {
-    question: "為什麼天空是藍色的？",
-    explanation: "陽光進入大氣層時，藍光的波長較短，更容易被空氣分子散射，所以我們看到的天空呈現藍色。這種現象叫做瑞利散射。"
-  },
-  {
-    question: "為什麼洋蔥會讓人流淚？",
-    explanation: "洋蔥被切開時會釋放含硫化合物，這些化合物與眼睛接觸時會形成硫酸，刺激淚腺分泌眼淚來沖洗刺激物。"
-  }
-];
+// 載入題目從 Firebase
+function loadQuestions() {
+  return new Promise((resolve, reject) => {
+    db.ref('questions').once('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data && Array.isArray(data)) {
+        questions = data;
+        console.log('題目已載入:', questions.length, '題');
+        resolve(questions);
+      } else {
+        console.log('沒有找到題目，使用預設題目');
+        // 如果沒有題目，可以設定預設題目
+        questions = [
+          {
+            question: "為什麼企鵝不會飛？",
+            explanation: "企鵝的祖先原本會飛，但為了適應水中生活，翅膀演化成了更適合游泳的鰭狀肢。牠們的骨骼也變得更重，以便在水中保持穩定。"
+          }
+        ];
+        resolve(questions);
+      }
+    }, (error) => {
+      console.error('載入題目失敗:', error);
+      reject(error);
+    });
+  });
+}
 
 // 加入遊戲
 function joinAsPlayer(player) {
@@ -45,7 +57,7 @@ function joinAsPlayer(player) {
 
   currentPlayer = player;
   
-  // 更新Firebase中的玩家資訊
+  // 更新Firebase中的玩家資訊（會覆蓋原有的）
   db.ref(`game/player${player}`).set({
     name: name,
     joinedAt: Date.now()
@@ -112,7 +124,7 @@ function listenToGameState() {
 }
 
 // 開始遊戲
-function startGame() {
+async function startGame() {
   console.log('Start game clicked, current player:', currentPlayer); // 除錯用
   
   if (!currentPlayer) {
@@ -120,31 +132,44 @@ function startGame() {
     return;
   }
 
-  // 檢查當前遊戲狀態
-  db.ref('game').once('value', (snapshot) => {
-    const data = snapshot.val();
-    console.log('Checking game state before start:', data); // 除錯用
+  try {
+    // 先載入題目
+    await loadQuestions();
     
-    if (!data || !data.playerA || !data.playerB || !data.playerA.name || !data.playerB.name) {
-      alert("請等待兩個玩家都加入遊戲！");
+    if (questions.length === 0) {
+      alert("沒有可用的題目！");
       return;
     }
 
-    console.log('Starting game...'); // 除錯用
-    
-    // 初始化遊戲狀態
-    const initialGameState = {
-      ...data, // 保留現有的玩家資訊
-      gameStarted: true, // 重要：設置遊戲開始標記
-      round: 1,
-      currentGuesser: 'A', // A先當想想
-      currentQuestion: 0,
-      answererRole: Math.random() < 0.5 ? 'honest' : 'liar', // 隨機分配答題者的角色
-      showResult: false
-    };
+    // 檢查當前遊戲狀態
+    db.ref('game').once('value', (snapshot) => {
+      const data = snapshot.val();
+      console.log('Checking game state before start:', data); // 除錯用
+      
+      if (!data || !data.playerA || !data.playerB || !data.playerA.name || !data.playerB.name) {
+        alert("請等待兩個玩家都加入遊戲！");
+        return;
+      }
 
-    db.ref('game').set(initialGameState); // 使用 set 而不是 update 確保數據完整
-  });
+      console.log('Starting game...'); // 除錯用
+      
+      // 初始化遊戲狀態
+      const initialGameState = {
+        ...data, // 保留現有的玩家資訊
+        gameStarted: true, // 重要：設置遊戲開始標記
+        round: 1,
+        currentGuesser: 'A', // A先當想想
+        currentQuestion: 0,
+        answererRole: Math.random() < 0.5 ? 'honest' : 'liar', // 隨機分配答題者的角色
+        showResult: false
+      };
+
+      db.ref('game').set(initialGameState); // 使用 set 而不是 update 確保數據完整
+    });
+  } catch (error) {
+    console.error('載入題目失敗:', error);
+    alert("載入題目失敗，請稍後再試！");
+  }
 }
 
 // 顯示遊戲區域
@@ -158,7 +183,13 @@ function showGameArea() {
 
 // 更新遊戲顯示
 function updateGameDisplay() {
-  const question = testQuestions[gameState.currentQuestion];
+  // 確保有題目可用
+  if (questions.length === 0) {
+    console.error('沒有可用的題目');
+    return;
+  }
+
+  const question = questions[gameState.currentQuestion % questions.length]; // 使用模運算避免超出範圍
   const isGuesser = currentPlayer === gameState.currentGuesser;
   const isAnswerer = currentPlayer !== gameState.currentGuesser;
   
@@ -255,9 +286,15 @@ function showResult() {
 
 // 下一回合
 function nextRound() {
+  // 確保有題目可用
+  if (questions.length === 0) {
+    alert("沒有可用的題目！");
+    return;
+  }
+
   // 輪換角色，重新分配答題者角色
   const nextGuesser = gameState.currentGuesser === 'A' ? 'B' : 'A';
-  const nextQuestion = (gameState.currentQuestion + 1) % testQuestions.length;
+  const nextQuestion = (gameState.currentQuestion + 1) % questions.length;
   
   db.ref('game').update({
     round: gameState.round + 1,
@@ -269,6 +306,13 @@ function nextRound() {
     guessResult: null
   });
 }
+
+// 頁面載入時先載入題目
+window.addEventListener('load', () => {
+  loadQuestions().catch(error => {
+    console.error('初始載入題目失敗:', error);
+  });
+});
 
 // 綁定到 window
 window.joinAsPlayer = joinAsPlayer;

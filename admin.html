@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>瞎掰王 - 題庫管理</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    .add-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      border: 2px solid #e9ecef;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    button {
+      padding: 12px 24px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      margin-right: 10px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+      transform: translateY(-1px);
+    }
+
+    .delete-btn {
+      background-color: #f44336;
+    }
+
+    .delete-btn:hover {
+      background-color: #da190b;
+    }
+
+    .edit-btn {
+      background-color: #ff9800;
+    }
+
+    .edit-btn:hover {
+      background-color: #f57c00;
+    }
+
+    .cancel-btn {
+      background-color: #6c757d;
+    }
+
+    .cancel-btn:hover {
+      background-color: #545b62;
+    }
+
+    .questions-list {
+      margin-top: 30px;
+    }
+
+    .question-item {
+      background: white;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 15px;
+      transition: all 0.3s ease;
+    }
+
+    .question-item:hover {
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+
+    .question-item.editing {
+      background: #fff3cd;
+      border-color: #ffeaa7;
+    }
+
+    .question-text {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .explanation-text {
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 15px;
+    }
+
+    .question-actions {
+      text-align: right;
+    }
+
+    .edit-form {
+      display: none;
+    }
+
+    .edit-form.active {
+      display: block;
+    }
+
+    .question-display.editing {
+      display: none;
+    }
+
+    .status-message {
+      padding: 12px;
+      border-radius: 8px;
+      margin: 10px 0;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .loading {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .stats {
+      background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎯 瞎掰王題庫管理</h1>
+    
+    <div class="stats">
+      <h3>📊 目前題庫統計</h3>
+      <div id="questionsCount">載入中...</div>
+    </div>
+
+    <div class="add-section">
+      <h3>➕ 新增題目</h3>
+      <form id="addQuestionForm">
+        <div class="form-group">
+          <label for="newQuestion">題目：</label>
+          <input type="text" id="newQuestion" placeholder="輸入問題..." required>
+        </div>
+        <div class="form-group">
+          <label for="newExplanation">正確解說：</label>
+          <textarea id="newExplanation" placeholder="輸入正確的解說..." required></textarea>
+        </div>
+        <button type="submit">新增題目</button>
+      </form>
+    </div>
+
+    <div id="statusMessage"></div>
+
+    <div class="questions-list">
+      <h3>📝 現有題目</h3>
+      <div id="questionsList">載入中...</div>
+    </div>
+  </div>
+
+  <!-- Firebase CDN -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  
+  <script>
+    // Firebase 設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyB95BnsfKtB__X6K7KbPCT0zng4eofZ3Ks",
+      authDomain: "shitty-24b2f.firebaseapp.com",
+      databaseURL: "https://shitty-24b2f-default-rtdb.firebaseio.com",
+      projectId: "shitty-24b2f",
+      storageBucket: "shitty-24b2f.appspot.com",
+      messagingSenderId: "370223390160",
+      appId: "1:370223390160:web:8be6cba5345de0f73eadd5"
+    };
+
+    // 初始化 Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let questions = [];
+
+    // 顯示狀態訊息
+    function showMessage(message, type = 'success') {
+      const statusDiv = document.getElementById('statusMessage');
+      statusDiv.innerHTML = `<div class="${type}">${message}</div>`;
+      setTimeout(() => {
+        statusDiv.innerHTML = '';
+      }, 3000);
+    }
+
+    // 載入題目
+    function loadQuestions() {
+      showMessage('載入題目中...', 'loading');
+      
+      db.ref('questions').once('value', (snapshot) => {
+        const data = snapshot.val();
+        questions = data || [];
+        updateQuestionsCount();
+        displayQuestions();
+        showMessage('題目載入完成！');
+      }).catch(error => {
+        console.error('載入失敗:', error);
+        showMessage('載入題目失敗！', 'error');
+      });
+    }
+
+    // 更新題目數量統計
+    function updateQuestionsCount() {
+      document.getElementById('questionsCount').innerHTML = 
+        `共有 <strong>${questions.length}</strong> 題`;
+    }
+
+    // 顯示題目列表
+    function displayQuestions() {
+      const listDiv = document.getElementById('questionsList');
+      
+      if (questions.length === 0) {
+        listDiv.innerHTML = '<p style="text-align: center; color: #666;">目前沒有任何題目</p>';
+        return;
+      }
+
+      listDiv.innerHTML = questions.map((q, index) => `
+        <div class="question-item" id="question-${index}">
+          <div class="question-display">
+            <div class="question-text">Q${index + 1}: ${q.question}</div>
+            <div class="explanation-text">💡 ${q.explanation}</div>
+            <div class="question-actions">
+              <button class="edit-btn" onclick="startEdit(${index})">編輯</button>
+              <button class="delete-btn" onclick="deleteQuestion(${index})">刪除</button>
+            </div>
+          </div>
+          
+          <div class="edit-form" id="edit-form-${index}">
+            <div class="form-group">
+              <label>題目：</label>
+              <input type="text" id="edit-question-${index}" value="${q.question}">
+            </div>
+            <div class="form-group">
+              <label>正確解說：</label>
+              <textarea id="edit-explanation-${index}">${q.explanation}</textarea>
+            </div>
+            <button onclick="saveEdit(${index})">儲存</button>
+            <button class="cancel-btn" onclick="cancelEdit(${index})">取消</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 新增題目
+    document.getElementById('addQuestionForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const question = document.getElementById('newQuestion').value.trim();
+      const explanation = document.getElementById('newExplanation').value.trim();
+      
+      if (!question || !explanation) {
+        showMessage('請填寫完整的題目和解說！', 'error');
+        return;
+      }
+
+      const newQuestion = { question, explanation };
+      questions.push(newQuestion);
+      
+      showMessage('儲存中...', 'loading');
+      
+      db.ref('questions').set(questions).then(() => {
+        showMessage('題目新增成功！');
+        document.getElementById('addQuestionForm').reset();
+        updateQuestionsCount();
+        displayQuestions();
+      }).catch(error => {
+        console.error('新增失敗:', error);
+        showMessage('新增題目失敗！', 'error');
+        questions.pop(); // 回復原狀
+      });
+    });
+
+    // 開始編輯
+    function startEdit(index) {
+      const item = document.getElementById(`question-${index}`);
+      item.classList.add('editing');
+      document.getElementById(`edit-form-${index}`).classList.add('active');
+    }
+
+    // 取消編輯
+    function cancelEdit(index) {
+      const item = document.getElementById(`question-${index}`);
+      item.classList.remove('editing');
+      document.getElementById(`edit-form-${index}`).classList.remove('active');
+      
+      // 重置表單
+      document.getElementById(`edit-question-${index}`).value = questions[index].question;
+      document.getElementById(`edit-explanation-${index}`).value = questions[index].explanation;
+    }
+
+    // 儲存編輯
+    function saveEdit(index) {
+      const question = document.getElementById(`edit-question-${index}`).value.trim();
+      const explanation = document.getElementById(`edit-explanation-${index}`).value.trim();
+      
+      if (!question || !explanation) {
+        showMessage('請填寫完整的題目和解說！', 'error');
+        return;
+      }
+
+      questions[index] = { question, explanation };
+      
+      showMessage('儲存中...', 'loading');
+      
+      db.ref('questions').set(questions).then(() => {
+        showMessage('題目更新成功！');
+        cancelEdit(index);
+        displayQuestions();
+      }).catch(error => {
+        console.error('更新失敗:', error);
+        showMessage('更新題目失敗！', 'error');
+      });
+    }
+
+    // 刪除題目
+    function deleteQuestion(index) {
+      if (!confirm(`確定要刪除題目 "${questions[index].question}" 嗎？`)) {
+        return;
+      }
+
+      const deletedQuestion = questions.splice(index, 1)[0];
+      
+      showMessage('刪除中...', 'loading');
+      
+      db.ref('questions').set(questions).then(() => {
+        showMessage('題目刪除成功！');
+        updateQuestionsCount();
+        displayQuestions();
+      }).catch(error => {
+        console.error('刪除失敗:', error);
+        showMessage('刪除題目失敗！', 'error');
+        questions.splice(index, 0, deletedQuestion); // 恢復題目
+      });
+    }
+
+    // 初始化載入資料
+    window.addEventListener('load', loadQuestions);
+
+    // 綁定函數到全域
+    window.startEdit = startEdit;
+    window.cancelEdit = cancelEdit;
+    window.saveEdit = saveEdit;
+    window.deleteQuestion = deleteQuestion;
+  </script>
+</body>
+</html>
