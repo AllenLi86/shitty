@@ -70,11 +70,70 @@ class GameUI {
     }
   }
 
-  // 顯示結果
+  // 顯示遊戲結算
+  showGameEnd(gameState, currentPlayer) {
+    document.getElementById('guesser-ui').style.display = 'none';
+    document.getElementById('answerer-ui').style.display = 'none';
+    document.getElementById('result-display').style.display = 'none';
+    document.getElementById('game-end-display').style.display = 'block';
+    
+    const scores = gameState.scores || { A: 0, B: 0 };
+    const result = determineWinner(scores, gameState.playerA.name, gameState.playerB.name);
+    const isWinner = currentPlayer === result.winner;
+    const isLoser = currentPlayer === result.loser;
+    
+    let endHTML = '';
+    
+    if (result.winner === 'tie') {
+      endHTML = `
+        <div class="game-end-title tie">🤝 平手！</div>
+        <div class="final-scores">
+          <div class="final-score-item">
+            <span class="player-name">${gameState.playerA.name}</span>
+            <span class="score">${scores.A}</span>
+          </div>
+          <div class="final-score-item">
+            <span class="player-name">${gameState.playerB.name}</span>
+            <span class="score">${scores.B}</span>
+          </div>
+        </div>
+        <div class="game-stats">
+          <div>總回合數：${gameState.round - 1} 回</div>
+        </div>
+      `;
+    } else {
+      endHTML = `
+        <div class="game-end-title ${isWinner ? 'winner' : 'loser'}">
+          ${isWinner ? '🎉 你獲勝了！' : '😔 你輸了！'}
+        </div>
+        <div class="winner-announcement">
+          <div class="winner-name">${result.winnerName} 獲勝！</div>
+        </div>
+        <div class="final-scores">
+          <div class="final-score-item ${result.winner === 'A' ? 'winner-score' : ''}">
+            <span class="player-name">${gameState.playerA.name}</span>
+            <span class="score">${scores.A}</span>
+          </div>
+          <div class="final-score-item ${result.winner === 'B' ? 'winner-score' : ''}">
+            <span class="player-name">${gameState.playerB.name}</span>
+            <span class="score">${scores.B}</span>
+          </div>
+        </div>
+        <div class="game-stats">
+          <div>總回合數：${gameState.round - 1} 回</div>
+        </div>
+      `;
+    }
+    
+    document.getElementById('game-end-text').innerHTML = endHTML;
+  }
+
+  // 顯示結果（加入結算按鈕）
   showResult(gameState) {
     document.getElementById('guesser-ui').style.display = 'none';
     document.getElementById('answerer-ui').style.display = 'none';
     document.getElementById('result-display').style.display = 'block';
+    document.getElementById('game-end-display').style.display = 'none';
     
     const correct = gameState.guessResult === 'correct';
     const roleText = gameState.answererRole === 'honest' ? '老實人' : '瞎掰人';
@@ -102,6 +161,14 @@ class GameUI {
     }
     
     document.getElementById('result-text').innerHTML = resultHTML;
+    
+    // 顯示結算按鈕（如果滿足最少回合數要求）
+    const endGameBtn = document.getElementById('end-game-btn');
+    if (gameState.round >= GAME_CONFIG.game.minimumRounds) {
+      endGameBtn.style.display = 'inline-block';
+    } else {
+      endGameBtn.style.display = 'none';
+    }
   }
 
   // 顯示遊戲區域

@@ -1,13 +1,22 @@
 // 遊戲設定
 const GAME_CONFIG = {
   // 題目類型出現機率 (why題目 : term題目)
-  typeRatio: { why: 0.6, term: 0.4 },
+  typeRatio: { why: 0.45, term: 0.55 },
   
   // 角色分配機率 (老實人 : 瞎掰人)
   roleRatio: { honest: 0.5, liar: 0.5 },
   
-  // 降低重複機率的設定
-  recentQuestionsLimit: 5, // 最近幾題不會重複
+  // 題目重複控制：同場遊戲內不重複（除非題庫用盡）
+  preventDuplicateInSameGame: true,
+  
+  // 遊戲結算設定
+  game: {
+    // 達到多少分可以考慮結算（可選功能，目前不使用）
+    // winningScore: 10,
+    
+    // 遊戲最少回合數（避免太快結算）
+    minimumRounds: 2
+  },
   
   // 計分邏輯設定
   scoring: {

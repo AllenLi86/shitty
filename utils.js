@@ -29,14 +29,9 @@ function assignAnswererRole() {
   return random < GAME_CONFIG.roleRatio.honest ? 'honest' : 'liar';
 }
 
-// 智能選擇題目
-function selectRandomQuestion(questions, recentQuestions) {
+// 智能選擇題目 - 同場遊戲內不重複
+function selectRandomQuestion(questions, usedQuestions = []) {
   if (questions.length === 0) return null;
-  
-  // 如果題目總數不多，就簡單隨機選擇
-  if (questions.length <= GAME_CONFIG.recentQuestionsLimit) {
-    return Math.floor(Math.random() * questions.length);
-  }
   
   // 根據設定的機率決定要選擇哪種類型的題目
   const whyQuestions = questions.map((q, i) => ({ ...q, index: i })).filter(q => q.type === 'why');
@@ -51,26 +46,27 @@ function selectRandomQuestion(questions, recentQuestions) {
     selectedType = 'term';
   }
   
-  // 獲取對應類型的題目，排除最近使用過的
+  // 獲取對應類型且未使用過的題目
   let availableQuestions;
   if (selectedType === 'why') {
-    availableQuestions = whyQuestions.filter(q => !recentQuestions.includes(q.index));
+    availableQuestions = whyQuestions.filter(q => !usedQuestions.includes(q.index));
   } else {
-    availableQuestions = termQuestions.filter(q => !recentQuestions.includes(q.index));
+    availableQuestions = termQuestions.filter(q => !usedQuestions.includes(q.index));
   }
   
   // 如果該類型沒有可用題目，則從另一類型選擇
   if (availableQuestions.length === 0) {
     if (selectedType === 'why') {
-      availableQuestions = termQuestions.filter(q => !recentQuestions.includes(q.index));
+      availableQuestions = termQuestions.filter(q => !usedQuestions.includes(q.index));
     } else {
-      availableQuestions = whyQuestions.filter(q => !recentQuestions.includes(q.index));
+      availableQuestions = whyQuestions.filter(q => !usedQuestions.includes(q.index));
     }
   }
   
-  // 如果所有題目都在最近使用過，清空記錄重新開始
+  // 如果所有題目都用過了，清空使用記錄重新開始
   if (availableQuestions.length === 0) {
-    recentQuestions.length = 0; // 清空陣列
+    console.log('所有題目都用過了，重新開始選題');
+    usedQuestions.length = 0; // 清空已使用題目列表
     availableQuestions = selectedType === 'why' ? whyQuestions : termQuestions;
   }
   
@@ -78,12 +74,29 @@ function selectRandomQuestion(questions, recentQuestions) {
   const selectedQuestion = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
   const questionIndex = selectedQuestion.index;
   
-  // 更新最近使用記錄
-  recentQuestions.push(questionIndex);
-  if (recentQuestions.length > GAME_CONFIG.recentQuestionsLimit) {
-    recentQuestions.shift(); // 移除最舊的記錄
-  }
-  
   console.log(`選擇了 ${selectedType} 類型題目 (索引: ${questionIndex}): ${questions[questionIndex].question}`);
   return questionIndex;
+}
+
+// 檢查玩家是否相同（用於判斷是否重聯）
+function checkPlayersChanged(currentData, newPlayerA, newPlayerB) {
+  if (!currentData || !currentData.playerA || !currentData.playerB) {
+    return false; // 沒有現有資料，不算改變
+  }
+  
+  const playerAChanged = currentData.playerA.name !== newPlayerA;
+  const playerBChanged = currentData.playerB.name !== newPlayerB;
+  
+  return playerAChanged || playerBChanged;
+}
+
+// 判斷遊戲獲勝者
+function determineWinner(scores, playerAName, playerBName) {
+  if (scores.A > scores.B) {
+    return { winner: 'A', winnerName: playerAName, loser: 'B', loserName: playerBName };
+  } else if (scores.B > scores.A) {
+    return { winner: 'B', winnerName: playerBName, loser: 'A', loserName: playerAName };
+  } else {
+    return { winner: 'tie', winnerName: null, loser: null, loserName: null };
+  }
 }

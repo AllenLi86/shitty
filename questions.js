@@ -2,7 +2,7 @@
 class QuestionsManager {
   constructor() {
     this.questions = [];
-    this.recentQuestions = [];
+    this.usedQuestions = []; // 改為同場遊戲內已使用的題目
   }
 
   // 載入題目從 Firebase
@@ -41,7 +41,17 @@ class QuestionsManager {
 
   // 選擇隨機題目
   selectRandomQuestion() {
-    return selectRandomQuestion(this.questions, this.recentQuestions);
+    const questionIndex = selectRandomQuestion(this.questions, this.usedQuestions);
+    if (questionIndex !== null) {
+      this.usedQuestions.push(questionIndex);
+    }
+    return questionIndex;
+  }
+
+  // 重置已使用題目（新遊戲時使用）
+  resetUsedQuestions() {
+    this.usedQuestions = [];
+    console.log('已重置使用過的題目列表');
   }
 
   // 獲取題目
@@ -52,5 +62,10 @@ class QuestionsManager {
   // 獲取題目總數
   getQuestionsCount() {
     return this.questions.length;
+  }
+
+  // 獲取已使用題目數量
+  getUsedQuestionsCount() {
+    return this.usedQuestions.length;
   }
 }

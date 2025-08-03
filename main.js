@@ -1,4 +1,37 @@
-// 初始化 Firebase
+// 更新遊戲顯示
+function updateGameDisplay() {
+  // 確保有題目可用
+  if (questionsManager.getQuestionsCount() === 0) {
+    console.error('沒有可用的題目');
+    return;
+  }
+
+  const question = questionsManager.getQuestion(gameState.currentQuestion);
+  if (!question) {
+    console.error('題目不存在:', gameState.currentQuestion);
+    return;
+  }
+  
+  const isGuesser = currentPlayer === gameState.currentGuesser;
+  const isAnswerer = currentPlayer !== gameState.currentGuesser;
+  
+  console.log('Updating display - isGuesser:', isGuesser, 'isAnswerer:', isAnswerer);
+  
+  // 更新分數顯示
+  gameUI.updateScoreDisplay(gameState, currentPlayer);
+
+  if (gameState.gameEnded) {
+    gameUI.showGameEnd(gameState, currentPlayer);
+    return;
+  }
+
+  if (gameState.showResult) {
+    gameUI.showResult(gameState);
+    return;
+  }
+}
+
+  // 初始化 Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -22,10 +55,46 @@ function joinAsPlayer(player) {
 
   currentPlayer = player;
   
-  // 更新Firebase中的玩家資訊（會覆蓋原有的）
-  db.ref(`game/player${player}`).set({
-    name: name,
-    joinedAt: Date.now()
+  // 檢查是否需要重置分數
+  db.ref('game').once('value', (snapshot) => {
+    const currentData = snapshot.val();
+    
+    // 準備新的玩家資料
+    const newPlayerData = {
+      name: name,
+      joinedAt: Date.now()
+    };
+    
+    // 檢查玩家是否有變化
+    if (currentData && currentData.gameStarted) {
+      const otherPlayer = player === 'A' ? 'B' : 'A';
+      const otherPlayerName = document.getElementById(`player${otherPlayer}-name`).value.trim();
+      
+      // 如果有一方玩家名稱改變，重置分數並清除遊戲狀態
+      const currentPlayerName = currentData[`player${player}`]?.name;
+      const otherCurrentName = currentData[`player${otherPlayer}`]?.name;
+      
+      if (currentPlayerName !== name || (otherPlayerName && otherCurrentName !== otherPlayerName)) {
+        console.log('玩家有變化，重置遊戲狀態');
+        
+        // 重置整個遊戲狀態
+        db.ref('game').set({
+          [`player${player}`]: newPlayerData,
+          gameStarted: false,
+          scores: { A: 0, B: 0 }
+        });
+        
+        // 重置題目使用記錄
+        questionsManager.resetUsedQuestions();
+      } else {
+        // 相同玩家重聯，保持分數
+        console.log('相同玩家重聯，保持分數');
+        db.ref(`game/player${player}`).set(newPlayerData);
+      }
+    } else {
+      // 首次加入或遊戲未開始
+      db.ref(`game/player${player}`).set(newPlayerData);
+    }
   });
 
   // 立即更新當前玩家的UI
@@ -60,6 +129,12 @@ function listenToGameState() {
       gameState = data;
       gameUI.showGameArea();
       updateGameDisplay();
+    } else if (data.gameEnded === true && currentPlayer && data.playerA && data.playerB) {
+      // 遊戲結束狀態
+      console.log('Game ended, showing end screen');
+      gameState = data;
+      gameUI.showGameArea();
+      gameUI.showGameEnd(gameState, currentPlayer);
     } else if (!data.gameStarted && document.getElementById('game-area').style.display === 'block') {
       // 如果遊戲還沒開始但已經在遊戲畫面，返回登入畫面
       gameUI.showLoginArea();
