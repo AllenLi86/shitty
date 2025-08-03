@@ -72,10 +72,14 @@ class GameUI {
 
   // 顯示遊戲結算
   showGameEnd(gameState, currentPlayer) {
-    document.getElementById('guesser-ui').style.display = 'none';
-    document.getElementById('answerer-ui').style.display = 'none';
-    document.getElementById('result-display').style.display = 'none';
+    // 🔧 先隱藏所有UI，避免重複顯示
+    this.hideAllGameUI();
+    
+    // 然後顯示結算頁面
     document.getElementById('game-end-display').style.display = 'block';
+    
+    // 🔧 重要：更新分數顯示區域
+    this.updateScoreDisplay(gameState, currentPlayer);
     
     const scores = gameState.scores || { A: 0, B: 0 };
     const result = determineWinner(scores, gameState.playerA.name, gameState.playerB.name);
@@ -195,5 +199,8 @@ class GameUI {
     console.log('Game not started, showing login');
     document.getElementById('login').style.display = 'block';
     document.getElementById('game-area').style.display = 'none';
+    
+    // 🔧 重要：隱藏所有遊戲UI，防止顯示舊結果
+    this.hideAllGameUI();
   }
 }

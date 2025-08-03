@@ -360,6 +360,13 @@ function newGame() {
 
   console.log('🧹 正在清除舊遊戲狀態...');
 
+  // 🔧 立即清除UI顯示，防止顯示舊結果
+  gameUI.hideAllGameUI();
+  gameUI.showLoginArea();
+  
+  // 清除本地遊戲狀態
+  gameState = null;
+
   // 完全重置遊戲狀態，保留玩家資訊但清除所有遊戲相關資料
   db.ref('game').update({
     gameStarted: false,
@@ -379,12 +386,6 @@ function newGame() {
     
     // 重置題目使用記錄
     questionsManager.resetUsedQuestions();
-    
-    // 清除本地遊戲狀態
-    gameState = null;
-    
-    // 回到登入畫面
-    gameUI.showLoginArea();
     
     console.log('🎯 新遊戲重置完成');
   }).catch(error => {
