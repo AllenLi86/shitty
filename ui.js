@@ -164,11 +164,23 @@ class GameUI {
     
     // 顯示結算按鈕（如果滿足最少回合數要求）
     const endGameBtn = document.getElementById('end-game-btn');
-    if (gameState.round >= GAME_CONFIG.game.minimumRounds) {
+    if (endGameBtn && gameState.round >= GAME_CONFIG.game.minimumRounds) {
       endGameBtn.style.display = 'inline-block';
+      console.log('顯示結算按鈕，目前回合:', gameState.round); // 除錯用
     } else {
-      endGameBtn.style.display = 'none';
+      if (endGameBtn) {
+        endGameBtn.style.display = 'none';
+      }
+      console.log('隱藏結算按鈕，目前回合:', gameState.round); // 除錯用
     }
+  }
+
+  // 隱藏所有遊戲UI
+  hideAllGameUI() {
+    document.getElementById('guesser-ui').style.display = 'none';
+    document.getElementById('answerer-ui').style.display = 'none';
+    document.getElementById('result-display').style.display = 'none';
+    document.getElementById('game-end-display').style.display = 'none';
   }
 
   // 顯示遊戲區域

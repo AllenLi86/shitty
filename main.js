@@ -31,7 +31,7 @@ function updateGameDisplay() {
   }
 }
 
-  // 初始化 Firebase
+// 初始化 Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -123,20 +123,20 @@ function listenToGameState() {
     // 檢查兩個玩家是否都已加入
     updateStartButton(data);
 
-    // 重要：只有當遊戲明確開始且當前用戶已選擇角色時才進入遊戲畫面
-    if (data.gameStarted === true && currentPlayer && data.playerA && data.playerB) {
-      console.log('Game started, showing game area');
-      gameState = data;
-      gameUI.showGameArea();
-      updateGameDisplay();
-    } else if (data.gameEnded === true && currentPlayer && data.playerA && data.playerB) {
+    // 重要：處理不同的遊戲狀態
+    if (data.gameEnded === true && currentPlayer && data.playerA && data.playerB) {
       // 遊戲結束狀態
       console.log('Game ended, showing end screen');
       gameState = data;
       gameUI.showGameArea();
       gameUI.showGameEnd(gameState, currentPlayer);
-    } else if (!data.gameStarted && document.getElementById('game-area').style.display === 'block') {
-      // 如果遊戲還沒開始但已經在遊戲畫面，返回登入畫面
+    } else if (data.gameStarted === true && currentPlayer && data.playerA && data.playerB) {
+      console.log('Game started, showing game area');
+      gameState = data;
+      gameUI.showGameArea();
+      updateGameDisplay();
+    } else if (!data.gameStarted && !data.gameEnded && document.getElementById('game-area').style.display === 'block') {
+      // 如果遊戲還沒開始且沒結束但已經在遊戲畫面，返回登入畫面
       gameUI.showLoginArea();
     }
   });
