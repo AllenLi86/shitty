@@ -14,7 +14,7 @@ const db = firebase.database();
 
 // 加入遊戲函式，會把玩家名字寫入 Firebase
 function joinGame() {
-  const nameInput = document.getElementById("name");
+  const nameInput = document.getElementById("nameInput");
   const name = nameInput.value.trim();
 
   if (!name) {
