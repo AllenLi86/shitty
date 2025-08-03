@@ -60,7 +60,18 @@
       <!-- 結果顯示 -->
       <div id="result-display" class="result-display" style="display: none;">
         <div id="result-text"></div>
-        <button onclick="nextRound()">下一回合</button>
+        <div class="result-buttons">
+          <button onclick="nextRound()">下一回合</button>
+          <button id="end-game-btn" class="end-game-btn" onclick="endGame()" style="display: none;">🏁 結算遊戲</button>
+        </div>
+      </div>
+
+      <!-- 遊戲結算顯示 -->
+      <div id="game-end-display" class="game-end-display" style="display: none;">
+        <div id="game-end-text"></div>
+        <div class="end-game-buttons">
+          <button class="new-game-btn" onclick="newGame()">🎮 開新遊戲</button>
+        </div>
       </div>
     </div>
   </div>
