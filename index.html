@@ -2,19 +2,368 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Shitty Game Test</title>
+  <title>瞎掰王 - 雙人遊戲</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+    
+    .login-section {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 30px;
+    }
+    
+    .player-login {
+      text-align: center;
+      padding: 20px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      min-width: 200px;
+    }
+    
+    .player-login.filled {
+      background-color: #e8f5e8;
+      border-color: #4CAF50;
+    }
+    
+    .player-login h3 {
+      margin-top: 0;
+      color: #666;
+    }
+    
+    input[type="text"] {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin: 10px 0;
+      width: 150px;
+    }
+    
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    .game-area {
+      display: none;
+      text-align: center;
+    }
+    
+    .status {
+      font-size: 18px;
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #e3f2fd;
+      border-radius: 8px;
+    }
+    
+    .question {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 20px 0;
+      padding: 20px;
+      background-color: #fff3e0;
+      border-radius: 8px;
+      border-left: 4px solid #ff9800;
+    }
+    
+    .explanation {
+      font-size: 16px;
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #f3e5f5;
+      border-radius: 8px;
+      border-left: 4px solid #9c27b0;
+    }
+    
+    .buttons {
+      margin: 30px 0;
+    }
+    
+    .buttons button {
+      margin: 0 10px;
+      padding: 15px 30px;
+      font-size: 16px;
+    }
+    
+    .guess-button {
+      background-color: #2196F3;
+    }
+    
+    .guess-button:hover {
+      background-color: #1976D2;
+    }
+    
+    .waiting {
+      color: #666;
+      font-style: italic;
+    }
+  </style>
 </head>
 <body>
-  <h1>👑 瞎掰王（雙人同步測試）v0.1.4</h1>
+  <div class="container">
+    <h1>👑 瞎掰王（雙人同步遊戲）v0.2.0</h1>
 
-  <div id="login">
-    <label>你的名稱：</label><input type="text" id="name" placeholder="你的名字" />
-    <button onclick="joinGame()">加入遊戲</button>
+    <div id="login">
+      <div class="login-section">
+        <div class="player-login" id="playerA-section">
+          <h3>玩家 A</h3>
+          <input type="text" id="playerA-name" placeholder="玩家A的名字" />
+          <br>
+          <button onclick="joinAsPlayer('A')">加入為玩家A</button>
+          <div id="playerA-status"></div>
+        </div>
+        
+        <div class="player-login" id="playerB-section">
+          <h3>玩家 B</h3>
+          <input type="text" id="playerB-name" placeholder="玩家B的名字" />
+          <br>
+          <button onclick="joinAsPlayer('B')">加入為玩家B</button>
+          <div id="playerB-status"></div>
+        </div>
+      </div>
+      
+      <div style="text-align: center;">
+        <button id="startGame" onclick="startGame()" disabled>開始遊戲</button>
+      </div>
+    </div>
+
+    <div id="game-area" class="game-area">
+      <div id="status" class="status"></div>
+      <div id="question" class="question"></div>
+      <div id="explanation" class="explanation" style="display: none;"></div>
+      <div id="buttons" class="buttons"></div>
+      <div id="waiting" class="waiting" style="display: none;">等待對方行動...</div>
+    </div>
   </div>
 
   <!-- Firebase CDN 版本（compat） -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script src="main.js" defer></script>
+  
+  <script>
+    // Firebase 設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyB95BnsfKtB__X6K7KbPCT0zng4eofZ3Ks",
+      authDomain: "shitty-24b2f.firebaseapp.com",
+      databaseURL: "https://shitty-24b2f-default-rtdb.firebaseio.com",
+      projectId: "shitty-24b2f",
+      storageBucket: "shitty-24b2f.appspot.com",
+      messagingSenderId: "370223390160",
+      appId: "1:370223390160:web:8be6cba5345de0f73eadd5"
+    };
+
+    // 初始化 Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 遊戲狀態
+    let currentPlayer = null;
+    let gameState = null;
+
+    // 測試題目和解說
+    const testQuestions = [
+      {
+        question: "為什麼企鵝不會飛？",
+        explanation: "企鵝的祖先原本會飛，但為了適應水中生活，翅膀演化成了更適合游泳的鰭狀肢。牠們的骨骼也變得更重，以便在水中保持穩定。"
+      },
+      {
+        question: "為什麼天空是藍色的？",
+        explanation: "陽光進入大氣層時，藍光的波長較短，更容易被空氣分子散射，所以我們看到的天空呈現藍色。這種現象叫做瑞利散射。"
+      },
+      {
+        question: "為什麼洋蔥會讓人流淚？",
+        explanation: "洋蔥被切開時會釋放含硫化合物，這些化合物與眼睛接觸時會形成硫酸，刺激淚腺分泌眼淚來沖洗刺激物。"
+      }
+    ];
+
+    // 加入遊戲
+    function joinAsPlayer(player) {
+      const nameInput = document.getElementById(`player${player}-name`);
+      const name = nameInput.value.trim();
+      
+      if (!name) {
+        alert("請輸入名稱");
+        return;
+      }
+
+      currentPlayer = player;
+      
+      // 更新Firebase中的玩家資訊
+      db.ref(`game/player${player}`).set({
+        name: name,
+        joinedAt: Date.now()
+      });
+
+      // 更新UI
+      document.getElementById(`player${player}-section`).classList.add('filled');
+      document.getElementById(`player${player}-status`).innerHTML = `✅ ${name} 已加入`;
+      nameInput.disabled = true;
+      
+      // 監聽遊戲狀態
+      listenToGameState();
+    }
+
+    // 監聽遊戲狀態
+    function listenToGameState() {
+      db.ref('game').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        // 檢查兩個玩家是否都已加入
+        if (data.playerA && data.playerB) {
+          document.getElementById('startGame').disabled = false;
+          
+          // 更新玩家狀態顯示
+          if (data.playerA) {
+            document.getElementById('playerA-section').classList.add('filled');
+            document.getElementById('playerA-status').innerHTML = `✅ ${data.playerA.name} 已加入`;
+          }
+          if (data.playerB) {
+            document.getElementById('playerB-section').classList.add('filled');
+            document.getElementById('playerB-status').innerHTML = `✅ ${data.playerB.name} 已加入`;
+          }
+        }
+
+        // 如果遊戲已開始
+        if (data.gameStarted && currentPlayer) {
+          gameState = data;
+          showGameArea();
+        }
+      });
+    }
+
+    // 開始遊戲
+    function startGame() {
+      if (!currentPlayer) {
+        alert("請先選擇玩家身份");
+        return;
+      }
+
+      // 初始化遊戲狀態
+      const initialGameState = {
+        gameStarted: true,
+        round: 1,
+        currentGuesser: 'A', // A先當想想
+        currentQuestion: 0,
+        playerBRole: Math.random() < 0.5 ? 'honest' : 'liar' // 隨機分配B的角色
+      };
+
+      db.ref('game').update(initialGameState);
+    }
+
+    // 顯示遊戲區域
+    function showGameArea() {
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('game-area').style.display = 'block';
+      
+      updateGameDisplay();
+    }
+
+    // 更新遊戲顯示
+    function updateGameDisplay() {
+      const question = testQuestions[gameState.currentQuestion];
+      const isGuesser = currentPlayer === gameState.currentGuesser;
+      const isPlayerB = currentPlayer === 'B';
+      const playerBRole = gameState.playerBRole;
+
+      // 更新狀態顯示
+      const statusEl = document.getElementById('status');
+      if (isGuesser) {
+        statusEl.innerHTML = `🤔 你是想想！請猜測對方是老實人還是瞎掰人`;
+      } else {
+        const roleText = playerBRole === 'honest' ? '老實人' : '瞎掰人';
+        statusEl.innerHTML = `🎭 你是${roleText}！`;
+      }
+
+      // 顯示題目
+      document.getElementById('question').innerHTML = `題目：${question.question}`;
+
+      // 根據角色顯示不同內容
+      const explanationEl = document.getElementById('explanation');
+      const buttonsEl = document.getElementById('buttons');
+      const waitingEl = document.getElementById('waiting');
+
+      if (isGuesser) {
+        // 想想只看到題目和猜測按鈕
+        explanationEl.style.display = 'none';
+        buttonsEl.innerHTML = `
+          <button class="guess-button" onclick="makeGuess('honest')">他是老實人</button>
+          <button class="guess-button" onclick="makeGuess('liar')">他是瞎掰人</button>
+        `;
+        waitingEl.style.display = 'none';
+      } else if (isPlayerB) {
+        // 玩家B根據角色顯示不同內容
+        if (playerBRole === 'honest') {
+          // 老實人看到解說
+          explanationEl.innerHTML = `解說：${question.explanation}`;
+          explanationEl.style.display = 'block';
+        } else {
+          // 瞎掰人只看到題目
+          explanationEl.style.display = 'none';
+        }
+        buttonsEl.innerHTML = '';
+        waitingEl.style.display = 'block';
+        waitingEl.innerHTML = '等待想想做出猜測...';
+      }
+    }
+
+    // 做出猜測
+    function makeGuess(guess) {
+      const correct = guess === gameState.playerBRole;
+      
+      // 更新遊戲狀態
+      db.ref('game').update({
+        lastGuess: guess,
+        guessResult: correct ? 'correct' : 'wrong',
+        round: gameState.round + 1,
+        currentGuesser: gameState.currentGuesser === 'A' ? 'B' : 'A', // 輪換
+        currentQuestion: (gameState.currentQuestion + 1) % testQuestions.length,
+        playerBRole: Math.random() < 0.5 ? 'honest' : 'liar' // 重新隨機分配
+      });
+
+      // 顯示結果
+      const resultText = correct ? '✅ 猜對了！' : '❌ 猜錯了！';
+      const roleText = gameState.playerBRole === 'honest' ? '老實人' : '瞎掰人';
+      alert(`${resultText}\n對方其實是${roleText}`);
+    }
+
+    // 綁定到 window
+    window.joinAsPlayer = joinAsPlayer;
+    window.startGame = startGame;
+    window.makeGuess = makeGuess;
+  </script>
 </body>
 </html>
