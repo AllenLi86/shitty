@@ -86,5 +86,22 @@
   <script src="questions.js"></script>
   <script src="ui.js"></script>
   <script src="main.js"></script>
+  
+  <!-- 除錯用：確認函數載入 -->
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        console.log('🔍 檢查函數是否存在:');
+        console.log('endGame:', typeof window.endGame);
+        console.log('newGame:', typeof window.newGame);
+        
+        if (typeof window.endGame === 'undefined') {
+          console.error('❌ endGame 函數未定義！');
+        } else {
+          console.log('✅ endGame 函數已正確載入');
+        }
+      }, 1000);
+    });
+  </script>
 </body>
 </html>
