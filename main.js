@@ -17,6 +17,8 @@ let playerName = "";
 let myRole = "";
 let isJudge = false;
 
+window.joinGame = joinGame;
+
 const questions = [
   { q: "貓為什麼會發出呼嚕聲？", a: "因為它們放鬆快樂" },
   { q: "為什麼天空是藍色的？", a: "因為光的散射原理" }
