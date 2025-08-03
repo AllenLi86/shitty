@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>瞎掰王 雙人互動測試版</title>
+  <!-- Firebase App (核心 SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+
+  <!-- Firebase Database -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <!-- 你自己的主程式 -->
+  <script src="main.js" defer></script>
+</head>
+<body>
+  <h1>👑 瞎掰王（雙人同步測試）v0.1.2</h1>
+
+  <div id="login">
+    <label>你的名稱：</label><input id="nameInput">
+    <button onclick="joinGame()">加入遊戲</button>
+  </div>
+
+  <div id="game" style="display:none;">
+    <p><b>你是：</b><span id="roleDisplay">-</span></p>
+    <p><b>題目：</b><span id="question">-</span></p>
+    <p><b>正確答案：</b><span id="answer">(僅老實人可見)</span></p>
+
+    <textarea id="reason" placeholder="輸入你的解釋"></textarea><br>
+    <button onclick="submitReason()">提交理由</button>
+
+    <p><b>對方說：</b><span id="opponentReason">尚未輸入</span></p>
+
+    <div id="judgeArea">
+      <button onclick="judge(true)">他是老實人</button>
+      <button onclick="judge(false)">他是瞎掰人</button>
+    </div>
+
+    <p id="result">結果：-</p>
+    <p>分數：你 <span id="myScore">0</span> / 對方 <span id="oppScore">0</span></p>
+
+    <button onclick="nextRound()">下一回合</button>
+  </div>
+</body>
+</html>
