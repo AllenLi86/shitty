@@ -1,0 +1,262 @@
+body {
+  font-family: 'Arial', sans-serif;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+.container {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+  font-size: 28px;
+}
+
+/* 登入區域 */
+.login-section {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 30px;
+  gap: 20px;
+}
+
+.player-login {
+  text-align: center;
+  padding: 25px;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  min-width: 200px;
+  transition: all 0.3s ease;
+}
+
+.player-login.filled {
+  background-color: #e8f5e8;
+  border-color: #4CAF50;
+  transform: translateY(-2px);
+}
+
+.player-login h3 {
+  margin-top: 0;
+  color: #666;
+  font-size: 18px;
+}
+
+input[type="text"] {
+  padding: 12px 15px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  margin: 10px 0;
+  width: 150px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+button {
+  padding: 12px 24px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background-color: #45a049;
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 遊戲區域 */
+.game-area {
+  min-height: 400px;
+}
+
+.role-ui {
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+/* 想想模式樣式 */
+.guesser-mode {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+  border: 3px solid #ff6b6b;
+}
+
+.guesser-badge {
+  background-color: #ff6b6b;
+  color: white;
+}
+
+.guesser-mode .question {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-left: 4px solid #ff6b6b;
+}
+
+/* 答題者模式樣式 */
+.answerer-mode {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  border: 3px solid #4ecdc4;
+}
+
+.answerer-mode .role-badge.honest {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.answerer-mode .role-badge.liar {
+  background-color: #ff9800;
+  color: white;
+}
+
+.answerer-mode .question {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-left: 4px solid #4ecdc4;
+}
+
+/* 共用樣式 */
+.role-badge {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.instruction {
+  font-size: 16px;
+  margin: 15px 0;
+  padding: 12px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  font-style: italic;
+  color: #555;
+}
+
+.question {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 20px 0;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.explanation {
+  font-size: 16px;
+  margin: 20px 0;
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  border-left: 4px solid #9c27b0;
+  line-height: 1.6;
+}
+
+.buttons {
+  margin: 30px 0;
+  text-align: center;
+}
+
+.guess-button {
+  margin: 0 15px;
+  padding: 15px 30px;
+  font-size: 16px;
+  border-radius: 25px;
+  min-width: 150px;
+  transition: all 0.3s ease;
+}
+
+.guess-button.honest {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+}
+
+.guess-button.honest:hover {
+  background: linear-gradient(135deg, #45a049, #3d8b40);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+.guess-button.liar {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+}
+
+.guess-button.liar:hover {
+  background: linear-gradient(135deg, #f57c00, #ef6c00);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 152, 0, 0.4);
+}
+
+.waiting {
+  color: #666;
+  font-style: italic;
+  font-size: 16px;
+  text-align: center;
+  margin: 20px 0;
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+}
+
+/* 結果顯示 */
+.result-display {
+  text-align: center;
+  padding: 30px;
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+#result-text {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 20px 0;
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 10px;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .login-section {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .player-login {
+    margin: 10px 0;
+    min-width: 250px;
+  }
+  
+  .buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .guess-button {
+    margin: 0;
+  }
+}
