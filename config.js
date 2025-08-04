@@ -21,7 +21,7 @@ const GAME_CONFIG = {
   // 計分邏輯設定
   scoring: {
     // 想想猜對老實人時的得分
-    guesserCorrectHonest: { guesser: 1, answerer: 0 },
+    guesserCorrectHonest: { guesser: 2, answerer: 1 },
     
     // 想想猜錯老實人時的得分變化
     guesserWrongHonest: { guesser: -1, answerer: -1 },
