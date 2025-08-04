@@ -7,7 +7,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>👑 瞎掰王（雙人同步遊戲）v0.2.2</h1>
+    <h1>👑 瞎掰王（雙人同步遊戲）v0.3.1</h1>
 
     <div id="login">
       <div class="login-section">
@@ -34,6 +34,9 @@
     </div>
 
     <div id="game-area" class="game-area">
+      <!-- 分數顯示區域 -->
+      <div id="score-display" class="score-display"></div>
+
       <!-- 想想模式UI -->
       <div id="guesser-ui" class="role-ui guesser-mode" style="display: none;">
         <div class="role-badge guesser-badge">🤔 你是想想</div>
@@ -57,7 +60,18 @@
       <!-- 結果顯示 -->
       <div id="result-display" class="result-display" style="display: none;">
         <div id="result-text"></div>
-        <button onclick="nextRound()">下一回合</button>
+        <div class="result-buttons">
+          <button onclick="nextRound()">下一回合</button>
+          <button id="end-game-btn" class="end-game-btn" onclick="endGame()" style="display: none;">🏁 結算遊戲</button>
+        </div>
+      </div>
+
+      <!-- 遊戲結算顯示 -->
+      <div id="game-end-display" class="game-end-display" style="display: none;">
+        <div id="game-end-text"></div>
+        <div class="end-game-buttons">
+          <button class="new-game-btn" onclick="newGame()">🎮 開新遊戲</button>
+        </div>
       </div>
     </div>
   </div>
@@ -65,6 +79,29 @@
   <!-- Firebase CDN 版本（compat） -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  
+  <!-- 遊戲模組 -->
+  <script src="config.js"></script>
+  <script src="utils.js"></script>
+  <script src="questions.js"></script>
+  <script src="ui.js"></script>
   <script src="main.js"></script>
+  
+  <!-- 除錯用：確認函數載入 -->
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        console.log('🔍 檢查函數是否存在:');
+        console.log('endGame:', typeof window.endGame);
+        console.log('newGame:', typeof window.newGame);
+        
+        if (typeof window.endGame === 'undefined') {
+          console.error('❌ endGame 函數未定義！');
+        } else {
+          console.log('✅ endGame 函數已正確載入');
+        }
+      }, 1000);
+    });
+  </script>
 </body>
 </html>
