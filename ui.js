@@ -2,6 +2,52 @@
 class GameUI {
   constructor() {}
 
+  // 生成難度星星顯示
+  generateDifficultyStars(difficulty) {
+    if (!GAME_CONFIG.display.showDifficulty || !difficulty) {
+      return '';
+    }
+    
+    const config = GAME_CONFIG.display.difficulty;
+    const stars = [];
+    
+    for (let i = 1; i <= config.maxStars; i++) {
+      if (i <= difficulty) {
+        stars.push(config.filledStar);
+      } else {
+        stars.push(config.emptyStar);
+      }
+    }
+    
+    return `<span class="difficulty-stars" title="難度 ${difficulty}/${config.maxStars}">${stars.join('')}</span>`;
+  }
+
+  // 生成主題標籤
+  generateTopicBadge(topic) {
+    if (!GAME_CONFIG.display.showTopic || !topic) {
+      return '';
+    }
+    
+    return `<span class="topic-badge" title="主題">${topic}</span>`;
+  }
+
+  // 生成題目資訊區塊
+  generateQuestionInfo(question) {
+    const difficultyStars = this.generateDifficultyStars(question.difficulty);
+    const topicBadge = this.generateTopicBadge(question.topic);
+    
+    if (!difficultyStars && !topicBadge) {
+      return '';
+    }
+    
+    return `
+      <div class="question-info">
+        ${difficultyStars}
+        ${topicBadge}
+      </div>
+    `;
+  }
+
   // 更新分數顯示
   updateScoreDisplay(gameState, currentPlayer) {
     const scores = gameState.scores || { A: 0, B: 0 };
@@ -32,7 +78,12 @@ class GameUI {
     document.getElementById('answerer-ui').style.display = 'none';
     document.getElementById('result-display').style.display = 'none';
     
-    document.getElementById('guesser-question').innerHTML = `題目：${question.question}`;
+    const questionInfo = this.generateQuestionInfo(question);
+    
+    document.getElementById('guesser-question').innerHTML = `
+      <div class="question-text">題目：${question.question}</div>
+      ${questionInfo}
+    `;
   }
 
   // 顯示答題者UI
@@ -57,8 +108,12 @@ class GameUI {
       instruction.innerHTML = '你看不到解說，請發揮創意瞎掰一個答案！';
     }
     
-    // 顯示題目
-    document.getElementById('answerer-question').innerHTML = `題目：${question.question}`;
+    // 顯示題目和題目資訊
+    const questionInfo = this.generateQuestionInfo(question);
+    document.getElementById('answerer-question').innerHTML = `
+      <div class="question-text">題目：${question.question}</div>
+      ${questionInfo}
+    `;
     
     // 根據角色顯示解說
     const explanationEl = document.getElementById('answerer-explanation');

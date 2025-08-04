@@ -9,6 +9,63 @@
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
+/* 題目資訊區塊 */
+.question-info {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 8px 0;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* 難度星星 */
+.difficulty-stars {
+  display: inline-flex;
+  align-items: center;
+  font-size: 18px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  color: #333;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  cursor: help;
+  transition: all 0.3s ease;
+}
+
+.difficulty-stars:hover {
+  transform: scale(1.05);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+/* 主題標籤 */
+.topic-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  cursor: help;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.topic-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+/* 題目文字容器 */
+.question-text {
+  text-align: center;
+}
+
 .scores {
   display: flex;
   justify-content: space-around;
@@ -495,5 +552,19 @@ button:disabled {
   .result-buttons button {
     width: 200px;
     margin: 5px 0;
+  }
+  
+  /* 手機版題目資訊調整 */
+  .question-info {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .difficulty-stars {
+    font-size: 16px;
+  }
+  
+  .topic-badge {
+    font-size: 11px;
   }
 }

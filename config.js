@@ -9,6 +9,22 @@ const GAME_CONFIG = {
   // 題目重複控制：同場遊戲內不重複（除非題庫用盡）
   preventDuplicateInSameGame: true,
   
+  // 題目顯示設定
+  display: {
+    // 是否顯示難度星星
+    showDifficulty: true,
+    
+    // 是否顯示主題標籤
+    showTopic: true,
+    
+    // 星星樣式設定
+    difficulty: {
+      maxStars: 3,
+      filledStar: '⭐',
+      emptyStar: '☆'
+    }
+  },
+  
   // 遊戲結算設定
   game: {
     // 達到多少分可以考慮結算（可選功能，目前不使用）

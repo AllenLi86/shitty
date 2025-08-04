@@ -11,13 +11,26 @@ class QuestionsManager {
       db.ref('questions').once('value', (snapshot) => {
         const data = snapshot.val();
         if (data && Array.isArray(data)) {
-          this.questions = data;
+          // 確保每個題目都有基本屬性，對舊題目進行兼容處理
+          this.questions = data.map(q => ({
+            question: q.question || '',
+            explanation: q.explanation || '',
+            type: q.type || 'why',
+            difficulty: q.difficulty || 1,
+            topic: q.topic || '一般'
+          }));
+          
           console.log('題目已載入:', this.questions.length, '題');
           
-          // 統計題目類型
+          // 統計題目類型和難度
           const whyCount = this.questions.filter(q => q.type === 'why').length;
           const termCount = this.questions.filter(q => q.type === 'term').length;
+          const diff1Count = this.questions.filter(q => q.difficulty == 1).length;
+          const diff2Count = this.questions.filter(q => q.difficulty == 2).length;
+          const diff3Count = this.questions.filter(q => q.difficulty == 3).length;
+          
           console.log(`題目分布 - why: ${whyCount}題, term: ${termCount}題`);
+          console.log(`難度分布 - 簡單: ${diff1Count}題, 中等: ${diff2Count}題, 困難: ${diff3Count}題`);
           
           resolve(this.questions);
         } else {
@@ -27,7 +40,9 @@ class QuestionsManager {
             {
               question: "為什麼企鵝不會飛？",
               explanation: "企鵝的祖先原本會飛，但為了適應水中生活，翅膀演化成了更適合游泳的鰭狀肢。牠們的骨骼也變得更重，以便在水中保持穩定。",
-              type: "why"
+              type: "why",
+              difficulty: 1,
+              topic: "生物"
             }
           ];
           resolve(this.questions);
