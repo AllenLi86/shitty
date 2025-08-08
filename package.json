@@ -4,5 +4,8 @@
   "dependencies": {
     "firebase-admin": "^11.11.0",
     "openai": "^4.20.0"
+  },
+  "engines": {
+    "node": "^22.0.0"
   }
 }
