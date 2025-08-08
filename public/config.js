@@ -50,13 +50,13 @@ const GAME_CONFIG = {
   }
 };
 
-// Firebase 設定
-const firebaseConfig = {
-  apiKey: "AIzaSyB95BnsfKtB__X6K7KbPCT0zng4eofZ3Ks",
-  authDomain: "shitty-24b2f.firebaseapp.com",
-  databaseURL: "https://shitty-24b2f-default-rtdb.firebaseio.com",
-  projectId: "shitty-24b2f",
-  storageBucket: "shitty-24b2f.appspot.com",
-  messagingSenderId: "370223390160",
-  appId: "1:370223390160:web:8be6cba5345de0f73eadd5"
-};
+// // Firebase 設定
+// const firebaseConfig = {
+//   apiKey: "AIzaSyB95BnsfKtB__X6K7KbPCT0zng4eofZ3Ks",
+//   authDomain: "shitty-24b2f.firebaseapp.com",
+//   databaseURL: "https://shitty-24b2f-default-rtdb.firebaseio.com",
+//   projectId: "shitty-24b2f",
+//   storageBucket: "shitty-24b2f.appspot.com",
+//   messagingSenderId: "370223390160",
+//   appId: "1:370223390160:web:8be6cba5345de0f73eadd5"
+// };
