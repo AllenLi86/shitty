@@ -635,61 +635,6 @@
   </script>
 
   <script>
-    // ========== Firebase 代理函數 ==========
-    async function firebaseGet(path) {
-      try {
-        const response = await fetch('/api/firebase-proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            method: 'GET',
-            path: path
-          })
-        });
-        if (!response.ok) throw new Error('Network response was not ok');
-        return await response.json();
-      } catch (error) {
-        console.error('Firebase GET error:', error);
-        throw error;
-      }
-    }
-
-    async function firebaseSet(path, data) {
-      try {
-        const response = await fetch('/api/firebase-proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            method: 'PUT',
-            path: path,
-            data: data
-          })
-        });
-        if (!response.ok) throw new Error('Network response was not ok');
-        return await response.json();
-      } catch (error) {
-        console.error('Firebase SET error:', error);
-        throw error;
-      }
-    }
-
-    // AI 生成題目函數
-    async function generateQuestions(type, difficulty, count = 5) {
-      try {
-        const response = await fetch('/api/generate-question', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type, difficulty, count })
-        });
-        
-        if (!response.ok) throw new Error('Failed to generate questions');
-        return await response.json();
-      } catch (error) {
-        console.error('Error generating questions:', error);
-        throw error;
-      }
-    }
-
     // ========== 主要功能 ==========
     let questions = [];
     let filteredQuestions = [];
