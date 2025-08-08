@@ -43,6 +43,18 @@ export default async function handler(req, res) {
         console.log('🔥 PUT successful');
         return res.status(200).json({ success: true });
         
+      case 'PATCH':  // 🔥 新增這個！
+        console.log('🔥 Attempting PATCH operation...');
+        await ref.update(data);
+        console.log('🔥 PATCH successful');
+        return res.status(200).json({ success: true });
+        
+      case 'DELETE':  // 🔥 也可以新增 DELETE
+        console.log('🔥 Attempting DELETE operation...');
+        await ref.remove();
+        console.log('🔥 DELETE successful');
+        return res.status(200).json({ success: true });
+        
       default:
         console.log('🔥 Method not allowed:', method);
         return res.status(405).json({ error: 'Method not allowed' });
