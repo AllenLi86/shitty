@@ -11,11 +11,12 @@ export default async function handler(req, res) {
     const admin = require('./utils/firebase-admin');
     const { method, path, data } = req.body;
 
-    // 🔒 權限檢查：寫入操作需要管理員權限
+    // 🔒 權限檢查：只有寫入操作需要管理員權限
+    // 🔥 重要：讀取 questions 不需要權限，遊戲需要讀取題目！
     const isWriteOperation = ['PUT', 'PATCH', 'DELETE'].includes(method);
-    const isAdminPath = path && (path.includes('questions') || path.includes('admin'));
+    const isQuestionsWrite = path === 'questions' && isWriteOperation;
     
-    if (isWriteOperation || isAdminPath) {
+    if (isQuestionsWrite) {
       const adminToken = req.headers['x-admin-token'] || req.headers['authorization']?.replace('Bearer ', '');
       
       if (!verifyAdminToken(adminToken)) {

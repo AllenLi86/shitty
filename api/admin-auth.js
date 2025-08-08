@@ -1,7 +1,7 @@
-// 簡單的 session 儲存（實際應用可用 Redis 或 Database）
+// 簡單的 session 儲存
 const adminSessions = new Map();
 
-export default async function handler(req, res) {  // 🔧 加入 async
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -44,7 +44,7 @@ export default async function handler(req, res) {  // 🔧 加入 async
 }
 
 // 驗證 token 的函數
-export function verifyAdminToken(token) {
+function verifyAdminToken(token) {
   if (!token) return false;
   
   const session = adminSessions.get(token);
@@ -57,3 +57,7 @@ export function verifyAdminToken(token) {
   
   return true;
 }
+
+// 使用 CommonJS export
+module.exports = handler;
+module.exports.verifyAdminToken = verifyAdminToken;
