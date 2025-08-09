@@ -476,14 +476,12 @@
     </div>
   </div>
 
+  <!-- admin 認證檢查  -->
   <script>
-    // ========== 全域變數 ==========
     let adminToken = localStorage.getItem('admin_token');
     let tokenExpiry = localStorage.getItem('admin_token_expiry');
-    let questions = [];
-    let filteredQuestions = [];
 
-    // ========== 認證相關 ==========
+    // 檢查 token 是否有效
     function isTokenValid() {
       if (!adminToken || !tokenExpiry) return false;
       if (Date.now() > parseInt(tokenExpiry)) {
@@ -493,6 +491,7 @@
       return true;
     }
 
+    // 登入函數
     async function adminLogin() {
       const password = prompt('🔒 管理員認證\n請輸入密碼：');
       if (!password) {
@@ -517,7 +516,7 @@
           return true;
         } else {
           const error = await response.json();
-          alert('❌ ' + (error.error || '認證失敗'));
+          alert('❌ ' + (error.message || '認證失敗'));
           window.location.href = '/';
           return false;
         }
@@ -529,6 +528,7 @@
       }
     }
 
+    // 登出函數
     function logout() {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_token_expiry');
@@ -536,14 +536,14 @@
       window.location.href = '/';
     }
 
-    // ========== Firebase API 調用（帶認證）==========
+    // 修改所有 API 調用，加入認證 header
     async function firebaseGet(path) {
       try {
         const response = await fetch('/api/firebase-proxy', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Admin-Token': adminToken
+            'X-Admin-Token': adminToken // 🔒 加入認證
           },
           body: JSON.stringify({
             method: 'GET',
@@ -571,7 +571,7 @@
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Admin-Token': adminToken
+            'X-Admin-Token': adminToken // 🔒 加入認證
           },
           body: JSON.stringify({
             method: 'PUT',
@@ -600,7 +600,7 @@
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Admin-Token': adminToken
+            'X-Admin-Token': adminToken // 🔒 加入認證
           },
           body: JSON.stringify({ type, difficulty, count })
         });
@@ -619,7 +619,27 @@
       }
     }
 
-    // ========== 工具函數 ==========
+    // 頁面載入時認證檢查
+    async function initAdmin() {
+      if (!isTokenValid()) {
+        const success = await adminLogin();
+        if (!success) return;
+      }
+      
+      // 認證成功後才載入頁面內容
+      loadQuestions();
+    }
+
+    // 修改頁面載入事件
+    window.addEventListener('load', initAdmin);
+  </script>
+
+  <script>
+    // ========== 主要功能 ==========
+    let questions = [];
+    let filteredQuestions = [];
+
+    // 顯示狀態訊息
     function showMessage(message, type = 'success') {
       const statusDiv = document.getElementById('statusMessage');
       statusDiv.innerHTML = `<div class="${type}">${message}</div>`;
@@ -628,7 +648,7 @@
       }, 3000);
     }
 
-    // ========== 主要功能 ==========
+    // 載入題目
     async function loadQuestions() {
       showMessage('載入題目中...', 'loading');
       
@@ -646,45 +666,336 @@
       }
     }
 
-    // ========== 頁面初始化 ==========
-    async function initAdmin() {
-      console.log('🚀 初始化 Admin 頁面...');
-      
-      if (!isTokenValid()) {
-        console.log('🔒 需要重新認證');
-        const success = await adminLogin();
-        if (!success) return;
-      }
-      
-      console.log('✅ 認證成功，載入內容');
-      loadQuestions();
-    }
-
-    // ========== 事件監聽 ==========
-    window.addEventListener('load', initAdmin);
-
-    // 先註解掉其他複雜功能，確保基本功能正常
-    // updateQuestionsCount, displayQuestions 等函數暫時簡化
+    // 更新題目數量統計
     function updateQuestionsCount() {
-      document.getElementById('questionsCount').innerHTML = `共有 <strong>${questions.length}</strong> 題`;
+      const whyCount = questions.filter(q => q.type === 'why').length;
+      const termCount = questions.filter(q => q.type === 'term').length;
+      const unknownCount = questions.filter(q => !q.type || (q.type !== 'why' && q.type !== 'term')).length;
+      
+      // 難度統計
+      const diff1Count = questions.filter(q => q.difficulty == 1).length;
+      const diff2Count = questions.filter(q => q.difficulty == 2).length;
+      const diff3Count = questions.filter(q => q.difficulty == 3).length;
+      const unknownDiffCount = questions.filter(q => !q.difficulty).length;
+      
+      // 主題統計
+      const topicCounts = {};
+      questions.forEach(q => {
+        if (q.topic) {
+          topicCounts[q.topic] = (topicCounts[q.topic] || 0) + 1;
+        }
+      });
+      
+      document.getElementById('questionsCount').innerHTML = 
+        `共有 <strong>${questions.length}</strong> 題`;
+      
+      let distributionHTML = '';
+      if (whyCount > 0) distributionHTML += `<span style="color: #1976d2;">Why: ${whyCount}題</span> `;
+      if (termCount > 0) distributionHTML += `<span style="color: #7b1fa2;">Term: ${termCount}題</span> `;
+      if (unknownCount > 0) distributionHTML += `<span style="color: #f57c00;">未分類: ${unknownCount}題</span>`;
+      
+      document.getElementById('typeDistribution').innerHTML = distributionHTML;
+      
+      let difficultyHTML = '難度分佈：';
+      if (diff1Count > 0) difficultyHTML += `<span style="color: #2e7d2e;">簡單: ${diff1Count}題</span> `;
+      if (diff2Count > 0) difficultyHTML += `<span style="color: #856404;">中等: ${diff2Count}題</span> `;
+      if (diff3Count > 0) difficultyHTML += `<span style="color: #721c24;">困難: ${diff3Count}題</span> `;
+      if (unknownDiffCount > 0) difficultyHTML += `<span style="color: #666;">未設定: ${unknownDiffCount}題</span>`;
+      
+      document.getElementById('difficultyDistribution').innerHTML = difficultyHTML;
+      
+      let topicHTML = '主要主題：';
+      const sortedTopics = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      sortedTopics.forEach(([topic, count]) => {
+        topicHTML += `<span style="color: #0066cc;">${topic}: ${count}題</span> `;
+      });
+      
+      document.getElementById('topicDistribution').innerHTML = topicHTML;
     }
 
+    // 更新主題篩選選項
     function updateTopicFilter() {
-      // 暫時簡化
+      const topics = [...new Set(questions.map(q => q.topic).filter(t => t))].sort();
+      const filterTopic = document.getElementById('filterTopic');
+      
+      filterTopic.innerHTML = '<option value="">全部主題</option>';
+      topics.forEach(topic => {
+        filterTopic.innerHTML += `<option value="${topic}">${topic}</option>`;
+      });
     }
 
+    // 篩選題目
+    function filterQuestions() {
+      const typeFilter = document.getElementById('filterType').value;
+      const difficultyFilter = document.getElementById('filterDifficulty').value;
+      const topicFilter = document.getElementById('filterTopic').value;
+      
+      filteredQuestions = questions.filter(q => {
+        const typeMatch = !typeFilter || q.type === typeFilter;
+        const difficultyMatch = !difficultyFilter || q.difficulty == difficultyFilter;
+        const topicMatch = !topicFilter || q.topic === topicFilter;
+        
+        return typeMatch && difficultyMatch && topicMatch;
+      });
+      
+      displayQuestions();
+    }
+
+    // 清除篩選
+    function clearFilters() {
+      document.getElementById('filterType').value = '';
+      document.getElementById('filterDifficulty').value = '';
+      document.getElementById('filterTopic').value = '';
+      filteredQuestions = [...questions];
+      displayQuestions();
+    }
+
+    // 顯示題目列表
     function displayQuestions() {
       const listDiv = document.getElementById('questionsList');
-      listDiv.innerHTML = `<p>載入了 ${questions.length} 題目</p>`;
+      
+      if (filteredQuestions.length === 0) {
+        listDiv.innerHTML = '<p style="text-align: center; color: #666;">沒有符合條件的題目</p>';
+        return;
+      }
+
+      listDiv.innerHTML = filteredQuestions.map((q, index) => {
+        const actualIndex = questions.indexOf(q);
+        const typeClass = q.type || 'unknown';
+        const typeText = q.type === 'why' ? 'Why' : q.type === 'term' ? 'Term' : '未分類';
+        
+        const difficultyText = q.difficulty ? `難度${q.difficulty}` : '未設定';
+        const difficultyClass = q.difficulty ? `difficulty-${q.difficulty}` : '';
+        
+        const topicText = q.topic || '無主題';
+        
+        return `
+        <div class="question-item" id="question-${actualIndex}">
+          <div class="question-display">
+            <div class="question-header">
+              <div class="question-text">Q${actualIndex + 1}: ${q.question}</div>
+              <div class="question-badges">
+                <div class="question-type ${typeClass}">${typeText}</div>
+                <div class="difficulty-badge ${difficultyClass}">${difficultyText}</div>
+                <div class="topic-badge">${topicText}</div>
+              </div>
+            </div>
+            <div class="explanation-text">💡 ${q.explanation}</div>
+            <div class="question-actions">
+              <button class="edit-btn" onclick="startEdit(${actualIndex})">編輯</button>
+              <button class="delete-btn" onclick="deleteQuestion(${actualIndex})">刪除</button>
+            </div>
+          </div>
+          
+          <div class="edit-form" id="edit-form-${actualIndex}">
+            <div class="form-group">
+              <label>題目：</label>
+              <input type="text" id="edit-question-${actualIndex}" value="${q.question}">
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>題目類型：</label>
+                <select id="edit-type-${actualIndex}">
+                  <option value="why" ${q.type === 'why' ? 'selected' : ''}>Why 題型（為什麼...？）</option>
+                  <option value="term" ${q.type === 'term' ? 'selected' : ''}>Term 題型（什麼是...？）</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>難度：</label>
+                <select id="edit-difficulty-${actualIndex}">
+                  <option value="1" ${q.difficulty == 1 ? 'selected' : ''}>簡單 (1)</option>
+                  <option value="2" ${q.difficulty == 2 ? 'selected' : ''}>中等 (2)</option>
+                  <option value="3" ${q.difficulty == 3 ? 'selected' : ''}>困難 (3)</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>主題：</label>
+                <input type="text" id="edit-topic-${actualIndex}" value="${q.topic || ''}">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>正確解說：</label>
+              <textarea id="edit-explanation-${actualIndex}">${q.explanation}</textarea>
+            </div>
+            
+            <button onclick="saveEdit(${actualIndex})">儲存</button>
+            <button class="cancel-btn" onclick="cancelEdit(${actualIndex})">取消</button>
+          </div>
+        </div>
+      `}).join('');
     }
 
-    // 暫時的 AI 生成函數
+    // AI 生成題目
     async function generateAIQuestions() {
-      alert('AI 生成功能測試中...');
+      const type = document.getElementById('ai-type').value;
+      const difficulty = parseInt(document.getElementById('ai-difficulty').value);
+      const count = parseInt(document.getElementById('ai-count').value);
+      
+      try {
+        // 顯示載入狀態
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = '生成中...';
+        button.disabled = true;
+        
+        showMessage('AI 正在生成題目...', 'loading');
+        
+        const result = await generateQuestions(type, difficulty, count);
+        
+        if (result.success) {
+          showMessage(`成功生成 ${result.generated.length} 道題目！`, 'success');
+          // 重新載入題目列表
+          await loadQuestions();
+        } else {
+          showMessage('生成題目失敗：' + result.error, 'error');
+        }
+        
+        // 恢復按鈕狀態
+        button.textContent = originalText;
+        button.disabled = false;
+        
+      } catch (error) {
+        console.error('Error generating AI questions:', error);
+        showMessage('生成題目時發生錯誤，請稍後再試！', 'error');
+        
+        // 恢復按鈕狀態
+        const button = event.target;
+        button.textContent = '✨ 生成題目';
+        button.disabled = false;
+      }
     }
 
-    // 綁定到 window
+    // 新增題目
+    document.getElementById('addQuestionForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const question = document.getElementById('newQuestion').value.trim();
+      const explanation = document.getElementById('newExplanation').value.trim();
+      const type = document.getElementById('newType').value;
+      const difficulty = parseInt(document.getElementById('newDifficulty').value);
+      const topic = document.getElementById('newTopic').value.trim();
+      
+      if (!question || !explanation || !type || !difficulty || !topic) {
+        showMessage('請填寫完整的題目資訊！', 'error');
+        return;
+      }
+
+      const newQuestion = { question, explanation, type, difficulty, topic };
+      questions.push(newQuestion);
+      
+      showMessage('儲存中...', 'loading');
+      
+      try {
+        await firebaseSet('questions', questions);
+        showMessage('題目新增成功！');
+        document.getElementById('addQuestionForm').reset();
+        filteredQuestions = [...questions];
+        updateQuestionsCount();
+        updateTopicFilter();
+        displayQuestions();
+      } catch (error) {
+        console.error('新增失敗:', error);
+        showMessage('新增題目失敗！', 'error');
+        questions.pop(); // 回復原狀
+      }
+    });
+
+    // 開始編輯
+    function startEdit(index) {
+      const item = document.getElementById(`question-${index}`);
+      item.classList.add('editing');
+      document.getElementById(`edit-form-${index}`).classList.add('active');
+    }
+
+    // 取消編輯
+    function cancelEdit(index) {
+      const item = document.getElementById(`question-${index}`);
+      item.classList.remove('editing');
+      document.getElementById(`edit-form-${index}`).classList.remove('active');
+      
+      // 重置表單
+      const q = questions[index];
+      document.getElementById(`edit-question-${index}`).value = q.question;
+      document.getElementById(`edit-explanation-${index}`).value = q.explanation;
+      document.getElementById(`edit-type-${index}`).value = q.type || 'why';
+      document.getElementById(`edit-difficulty-${index}`).value = q.difficulty || '1';
+      document.getElementById(`edit-topic-${index}`).value = q.topic || '';
+    }
+
+    // 儲存編輯
+    async function saveEdit(index) {
+      const question = document.getElementById(`edit-question-${index}`).value.trim();
+      const explanation = document.getElementById(`edit-explanation-${index}`).value.trim();
+      const type = document.getElementById(`edit-type-${index}`).value;
+      const difficulty = parseInt(document.getElementById(`edit-difficulty-${index}`).value);
+      const topic = document.getElementById(`edit-topic-${index}`).value.trim();
+      
+      if (!question || !explanation || !type || !difficulty || !topic) {
+        showMessage('請填寫完整的題目資訊！', 'error');
+        return;
+      }
+
+      questions[index] = { question, explanation, type, difficulty, topic };
+      
+      showMessage('儲存中...', 'loading');
+      
+      try {
+        await firebaseSet('questions', questions);
+        showMessage('題目更新成功！');
+        cancelEdit(index);
+        filteredQuestions = [...questions];
+        updateQuestionsCount();
+        updateTopicFilter();
+        displayQuestions();
+      } catch (error) {
+        console.error('更新失敗:', error);
+        showMessage('更新題目失敗！', 'error');
+      }
+    }
+
+    // 刪除題目
+    async function deleteQuestion(index) {
+      if (!confirm(`確定要刪除題目 "${questions[index].question}" 嗎？`)) {
+        return;
+      }
+
+      const deletedQuestion = questions.splice(index, 1)[0];
+      
+      showMessage('刪除中...', 'loading');
+      
+      try {
+        await firebaseSet('questions', questions);
+        showMessage('題目刪除成功！');
+        filteredQuestions = [...questions];
+        updateQuestionsCount();
+        updateTopicFilter();
+        displayQuestions();
+      } catch (error) {
+        console.error('刪除失敗:', error);
+        showMessage('刪除題目失敗！', 'error');
+        questions.splice(index, 0, deletedQuestion); // 恢復題目
+      }
+    }
+
+    // 綁定篩選事件
+    document.getElementById('filterType').addEventListener('change', filterQuestions);
+    document.getElementById('filterDifficulty').addEventListener('change', filterQuestions);
+    document.getElementById('filterTopic').addEventListener('change', filterQuestions);
+
+    // 初始化載入資料
+    window.addEventListener('load', loadQuestions);
+
+    // 綁定函數到全域
+    window.startEdit = startEdit;
+    window.cancelEdit = cancelEdit;
+    window.saveEdit = saveEdit;
+    window.deleteQuestion = deleteQuestion;
+    window.clearFilters = clearFilters;
     window.generateAIQuestions = generateAIQuestions;
-  </script>  
+  </script>
 </body>
 </html>
