@@ -835,37 +835,48 @@
       const difficulty = parseInt(document.getElementById('ai-difficulty').value);
       const count = parseInt(document.getElementById('ai-count').value);
       
+      // 🔥 安全地獲取按鈕
+      let button = null;
+      try {
+        button = event?.target || document.querySelector('.ai-btn');
+      } catch (e) {
+        console.log('無法取得按鈕元素');
+      }
+      
       try {
         // 顯示載入狀態
-        const button = event.target;
-        const originalText = button.textContent;
-        button.textContent = '生成中...';
-        button.disabled = true;
+        if (button) {
+          const originalText = button.textContent;
+          button.textContent = '生成中...';
+          button.disabled = true;
+        }
         
         showMessage('AI 正在生成題目...', 'loading');
         
         const result = await generateQuestions(type, difficulty, count);
         
-        if (result.success) {
+        if (result && result.success) {
           showMessage(`成功生成 ${result.generated.length} 道題目！`, 'success');
-          // 重新載入題目列表
           await loadQuestions();
         } else {
-          showMessage('生成題目失敗：' + result.error, 'error');
+          showMessage('生成題目失敗：' + (result?.error || '未知錯誤'), 'error');
         }
         
         // 恢復按鈕狀態
-        button.textContent = originalText;
-        button.disabled = false;
+        if (button) {
+          button.textContent = '✨ 生成題目';
+          button.disabled = false;
+        }
         
       } catch (error) {
         console.error('Error generating AI questions:', error);
-        showMessage('生成題目時發生錯誤，請稍後再試！', 'error');
+        showMessage('生成題目時發生錯誤：' + error.message, 'error');
         
         // 恢復按鈕狀態
-        const button = event.target;
-        button.textContent = '✨ 生成題目';
-        button.disabled = false;
+        if (button) {
+          button.textContent = '✨ 生成題目';
+          button.disabled = false;
+        }
       }
     }
 
