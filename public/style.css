@@ -234,37 +234,73 @@ button:disabled {
   background: linear-gradient(135deg, #45a049, #3d8b40);
 }
 
+/* 🔥 確保登入頁面顯示時，遊戲區域完全隱藏 */
+#login {
+  display: block;
+}
+
+#game-area {
+  /* 🔥 預設隱藏遊戲區域 */
+  display: none;
+}
+
+/* 🔥 當遊戲開始時的顯示控制在 JavaScript 中處理 */
+#game-area.active {
+  display: block;
+}
+
+#login.hidden {
+  display: none;
+}
+
 /* 遊戲區域 */
 .game-area {
   min-height: 400px;
+  /* 🔥 確保沒有背景色 */
+  background: transparent;
+  /* 🔥 確保沒有任何邊框或陰影 */
+  border: none;
+  box-shadow: none;
 }
 
 .role-ui {
   padding: 20px;
   border-radius: 12px;
   margin: 20px 0;
+  /* 🔥 確保隱藏時完全不可見 */
+  transition: none;
+}
+
+/* 🔥 確保隱藏的遊戲UI完全不可見 */
+#guesser-ui[style*="display: none"],
+#answerer-ui[style*="display: none"],
+#result-display[style*="display: none"],
+#game-end-display[style*="display: none"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
 }
 
 /* 想想模式樣式 */
 .guesser-mode {
+  /* 🔥 如果這個粉紫色漸層是問題所在，先移除看看 */
   background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
   border: 3px solid #ff6b6b;
-}
-
-.guesser-badge {
-  background-color: #ff6b6b;
-  color: white;
-}
-
-.guesser-mode .question {
-  background-color: rgba(255, 255, 255, 0.9);
-  border-left: 4px solid #ff6b6b;
+  /* 🔥 確保隱藏時不顯示 */
+  display: block;
 }
 
 /* 答題者模式樣式 */
 .answerer-mode {
+  /* 🔥 這個漸層的終點也有粉紫色 */
   background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
   border: 3px solid #4ecdc4;
+  /* 🔥 確保隱藏時不顯示 */
+  display: block;
 }
 
 .answerer-mode .role-badge.honest {
