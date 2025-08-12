@@ -1,7 +1,7 @@
 /* 🔥 新增：分數容器和變化效果 */
 .score-container {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
@@ -16,10 +16,8 @@
   animation: scoreChangeAppear 0.6s ease-out;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
   white-space: nowrap;
-  position: absolute; /* 🔥 使用絕對定位 */
-  right: -15px; /* 🔥 偏右顯示 */
-  top: 50%;
-  transform: translateY(-50%);
+  /* 🔥 不使用絕對定位，直接在 flex 容器中排列 */
+  margin-left: 8px; /* 🔥 在分數右側留一點間距 */
 }
 
 .score-change.positive {
@@ -796,17 +794,14 @@ button:disabled {
   
   /* 🔥 手機上的分數變化樣式優化 */
   .score-container {
-    position: relative;
     gap: 8px;
+    flex-wrap: nowrap; /* 🔥 手機上也不換行，保持水平排列 */
   }
   
   .score-change {
     font-size: 16px; /* 🔥 手機上稍微小一點 */
     padding: 2px 8px;
-    right: -10px; /* 🔥 手機上稍微調整位置 */
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    margin-left: 6px; /* 🔥 手機上間距小一點 */
   }
   
   /* 🔥 遊戲UI區域優化 */
@@ -1013,7 +1008,7 @@ button:disabled {
   .score-change {
     font-size: 14px;
     padding: 2px 6px;
-    right: -8px;
+    margin-left: 4px; /* 🔥 小手機上間距更小 */
   }
   
   .question {
@@ -1075,17 +1070,14 @@ button:disabled {
     justify-content: center;
   }
   
-  /* 🔥 橫屏時分數變化保持右側定位 */
+  /* 🔥 橫屏時分數變化保持右側排列 */
   .score-container {
-    position: relative;
     gap: 8px;
+    flex-wrap: nowrap;
   }
   
   .score-change {
-    position: absolute;
-    right: -12px;
-    top: 50%;
-    transform: translateY(-50%);
+    margin-left: 8px;
   }
 }
 
