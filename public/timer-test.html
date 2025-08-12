@@ -212,7 +212,10 @@
                 timeLeft--;
                 updateTimer();
                 
-                if (timeLeft < 0) {  // 🔥 改為 < 0，讓它顯示到 0
+                if (timeLeft <= 0) {  // 🔥 改為 <= 0
+                    if (timeLeft === 0) {
+                        updateTimer();  // 🔥 確保顯示0秒
+                    }
                     clearInterval(testTimer);
                     testTimer = null;
                     onTimerExpired(effect);

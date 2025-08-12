@@ -542,6 +542,9 @@ function updateGameDisplay() {
   // 檢查是否要顯示結果
   if (gameState.showResult === true) {
     console.log('顯示回合結果');
+
+    // 🔥 新增：確保結果頁面時停止計時器
+    stopGameTimer();
     
     // 🔥 計算分數變化以便顯示
     const correct = gameState.guessResult === 'correct';

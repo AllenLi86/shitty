@@ -226,6 +226,11 @@ class GameUI {
 
   // 🔥 修改：顯示結果（加入分數變化顯示）
   showResult(gameState, scoreChanges) {
+    // 🔥 新增：確保停止計時器
+    if (typeof stopGameTimer === 'function') {
+      stopGameTimer();
+    }
+
     document.getElementById('guesser-ui').style.display = 'none';
     document.getElementById('answerer-ui').style.display = 'none';
     document.getElementById('result-display').style.display = 'block';
