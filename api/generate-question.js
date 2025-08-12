@@ -37,8 +37,15 @@ export default async function handler(req, res) {
     // 自動選擇模型或使用指定模型
     let selectedModel = model;
     if (model === 'auto') {
-      // 優先級：Groq > Gemini > Claude > OpenAI (基於免費額度和速度)
-      const priority = ['groq-mixtral', 'groq-llama', 'gemini-pro', 'claude-haiku', 'openai'];
+      // 🔥 優先級：最省 token 的免費模型優先
+      const priority = [
+        'groq-llama-8b',      // 最快最省
+        'groq-llama-70b',     // 品質更好
+        'groq-mixtral',       // 備選
+        'gemini-pro',         // Google 免費
+        'claude-haiku',       // Claude 便宜版
+        'openai-gpt35'        // 付費備選
+      ];
       selectedModel = priority.find(m => availableModels.some(am => am.name === m)) || availableModels[0].name;
     }
 

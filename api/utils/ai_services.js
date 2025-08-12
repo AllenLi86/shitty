@@ -11,13 +11,49 @@ class AIService {
   initializeServices() {
     const services = [];
 
+    // Groq (修正版本)
+    if (process.env.GROQ_API_KEY) {
+      try {
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+        
+        // 🔥 使用最新的 Groq 模型
+        services.push({
+          name: 'groq-llama-8b',
+          displayName: 'Groq Llama 3.1 8B (免費・最快)',
+          model: 'llama-3.1-8b-instant',
+          client: groq,
+          type: 'groq'
+        });
+        
+        services.push({
+          name: 'groq-llama-70b',
+          displayName: 'Groq Llama 3.1 70B (免費・高品質)',
+          model: 'llama-3.1-70b-versatile',
+          client: groq,
+          type: 'groq'
+        });
+        
+        services.push({
+          name: 'groq-mixtral',
+          displayName: 'Groq Mixtral 8x7B (免費)',
+          model: 'mixtral-8x7b-32768',
+          client: groq,
+          type: 'groq'
+        });
+        
+        console.log('✅ Groq services initialized');
+      } catch (error) {
+        console.log('❌ Groq not available:', error.message);
+      }
+    }
+
     // OpenAI
     if (process.env.OPENAI_API_KEY) {
       try {
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
         services.push({
-          name: 'openai',
-          displayName: 'OpenAI GPT-3.5',
+          name: 'openai-gpt35',
+          displayName: 'OpenAI GPT-3.5 Turbo',
           model: 'gpt-3.5-turbo',
           client: openai,
           type: 'openai'
@@ -30,32 +66,9 @@ class AIService {
           client: openai,
           type: 'openai'
         });
+        console.log('✅ OpenAI services initialized');
       } catch (error) {
-        console.log('OpenAI not available:', error.message);
-      }
-    }
-
-    // Groq
-    if (process.env.GROQ_API_KEY) {
-      try {
-        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-        services.push({
-          name: 'groq-mixtral',
-          displayName: 'Groq Mixtral 8x7B',
-          model: 'mixtral-8x7b-32768',
-          client: groq,
-          type: 'groq'
-        });
-        
-        services.push({
-          name: 'groq-llama',
-          displayName: 'Groq Llama2 70B',
-          model: 'llama2-70b-4096',
-          client: groq,
-          type: 'groq'
-        });
-      } catch (error) {
-        console.log('Groq not available:', error.message);
+        console.log('❌ OpenAI not available:', error.message);
       }
     }
 
@@ -70,8 +83,9 @@ class AIService {
           client: genAI,
           type: 'gemini'
         });
+        console.log('✅ Gemini services initialized');
       } catch (error) {
-        console.log('Gemini not available:', error.message);
+        console.log('❌ Gemini not available:', error.message);
       }
     }
 
@@ -94,8 +108,9 @@ class AIService {
           client: anthropic,
           type: 'claude'
         });
+        console.log('✅ Claude services initialized');
       } catch (error) {
-        console.log('Claude not available:', error.message);
+        console.log('❌ Claude not available:', error.message);
       }
     }
 
@@ -124,17 +139,34 @@ class AIService {
       
       switch (service.type) {
         case 'openai':
-        case 'groq':
           response = await service.client.chat.completions.create({
             model: service.model,
             messages: [{ role: "user", content: prompt }],
             temperature: 0.8,
-            max_tokens: 2000,
+            max_tokens: 1500, // 🔥 限制 token 數量
+          });
+          return this.parseResponse(response.choices[0].message.content, modelName);
+          
+        case 'groq':
+          // 🔥 使用正確的 Groq API 格式
+          response = await service.client.chat.completions.create({
+            model: service.model,
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.8,
+            max_tokens: 1500, // 🔥 限制 token 使用
+            top_p: 0.9,
+            stream: false, // 🔥 不使用 streaming
           });
           return this.parseResponse(response.choices[0].message.content, modelName);
           
         case 'gemini':
-          const model = service.client.getGenerativeModel({ model: service.model });
+          const model = service.client.getGenerativeModel({ 
+            model: service.model,
+            generationConfig: {
+              maxOutputTokens: 1500, // 🔥 限制輸出 token
+              temperature: 0.8,
+            }
+          });
           const result = await model.generateContent(prompt);
           const text = result.response.text();
           return this.parseResponse(text, modelName);
@@ -142,7 +174,7 @@ class AIService {
         case 'claude':
           const message = await service.client.messages.create({
             model: service.model,
-            max_tokens: 2000,
+            max_tokens: 1500, // 🔥 限制 token
             temperature: 0.8,
             messages: [{ role: "user", content: prompt }]
           });
@@ -159,21 +191,21 @@ class AIService {
   }
 
   buildPrompt(type, difficulty, count) {
-    return `請生成 ${count} 道${type === 'why' ? '為什麼' : '什麼是'}類型的題目，難度為${difficulty}。
+    // 🔥 優化 prompt，減少 token 消耗但保持精準度
+    return `生成${count}道${type === 'why' ? '為什麼' : '什麼是'}題目，難度${difficulty}。
 
 要求：
-1. 題目要有趣、有教育意義，並且需基於事實，不能是幻覺
-2. 每題包含：問題、正確解說、類型、難度、主題
-3. 必須回傳標準 JSON 格式，不要包含任何其他文字
-4. JSON 格式如下：
+1. 有趣且有教育意義
+2. 回傳JSON格式，無其他文字
+3. 格式：
 {
   "questions": [
     {
       "question": "為什麼...",
-      "explanation": "正確解說...",
+      "explanation": "簡潔解說(100字內)",
       "type": "${type}",
       "difficulty": ${difficulty},
-      "topic": "適當的主題分類"
+      "topic": "主題"
     }
   ]
 }`;
