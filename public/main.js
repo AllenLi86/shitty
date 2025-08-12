@@ -155,6 +155,20 @@ async function joinAsPlayer(player) {
   currentPlayer = player;
   
   try {
+    // 🔥 新增：立即鎖定另一個玩家的輸入框
+    const otherPlayer = player === 'A' ? 'B' : 'A';
+    const otherNameInput = document.getElementById(`player${otherPlayer}-name`);
+    const otherButton = document.querySelector(`#player${otherPlayer}-section button`);
+    const otherSection = document.getElementById(`player${otherPlayer}-section`);
+    
+    // 鎖定另一個玩家的輸入和按鈕
+    otherNameInput.disabled = true;
+    otherButton.disabled = true;
+    otherSection.classList.add('locked');
+    
+    // 顯示鎖定提示
+    document.getElementById(`player${otherPlayer}-status`).innerHTML = `🔒 此欄位已鎖定（${name} 已選擇玩家${player}）`;
+
     // 檢查是否需要重置分數
     const currentData = await firebaseGet('game');
     
@@ -166,8 +180,7 @@ async function joinAsPlayer(player) {
     
     // 檢查玩家是否有變化
     if (currentData && currentData.gameStarted) {
-      const otherPlayer = player === 'A' ? 'B' : 'A';
-      const otherPlayerName = document.getElementById(`player${otherPlayer}-name`).value.trim();
+      const otherPlayerName = otherNameInput.value.trim();
       
       // 如果有一方玩家名稱改變，重置分數並清除遊戲狀態
       const currentPlayerName = currentData[`player${player}`]?.name;
@@ -208,6 +221,17 @@ async function joinAsPlayer(player) {
   } catch (error) {
     console.error('Error joining game:', error);
     alert('加入遊戲失敗，請稍後再試！');
+    
+    // 🔥 失敗時恢復另一個玩家的輸入框
+    const otherPlayer = player === 'A' ? 'B' : 'A';
+    const otherNameInput = document.getElementById(`player${otherPlayer}-name`);
+    const otherButton = document.querySelector(`#player${otherPlayer}-section button`);
+    const otherSection = document.getElementById(`player${otherPlayer}-section`);
+    
+    otherNameInput.disabled = false;
+    otherButton.disabled = false;
+    otherSection.classList.remove('locked');
+    document.getElementById(`player${otherPlayer}-status`).innerHTML = '';
   }
 }
 
@@ -486,7 +510,7 @@ async function endGame() {
   }
 }
 
-// 開新遊戲
+// 🔥 修改：開新遊戲（需要重置鎖定狀態）
 async function newGame() {
   console.log('🎮 開新遊戲按鈕被點擊了！');
   
@@ -502,8 +526,23 @@ async function newGame() {
     gameUI.hideAllGameUI();
     gameUI.showLoginArea();
     
+    // 🔥 重置登入介面的鎖定狀態
+    ['A', 'B'].forEach(player => {
+      const nameInput = document.getElementById(`player${player}-name`);
+      const button = document.querySelector(`#player${player}-section button`);
+      const section = document.getElementById(`player${player}-section`);
+      const status = document.getElementById(`player${player}-status`);
+      
+      nameInput.disabled = false;
+      nameInput.value = '';
+      button.disabled = false;
+      section.classList.remove('filled', 'locked');
+      status.innerHTML = '';
+    });
+    
     // 清除本地遊戲狀態
     gameState = null;
+    currentPlayer = null; // 🔥 重置當前玩家
 
     // 完全重置遊戲狀態，保留玩家資訊但清除所有遊戲相關資料
     await firebaseUpdate('game', {
@@ -517,6 +556,9 @@ async function newGame() {
       answererRole: null,
       lastGuess: null,
       guessResult: null,
+      // 🔥 清除玩家資訊，讓他們重新加入
+      playerA: null,
+      playerB: null,
       // 確保移除任何可能殘留的狀態
       usedQuestions: null
     });

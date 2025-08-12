@@ -3,30 +3,35 @@
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
   flex-wrap: wrap;
+  position: relative;
 }
 
 .score-change {
-  font-size: 16px;
+  font-size: 20px; /* 🔥 增大字體 */
   font-weight: bold;
-  padding: 2px 8px;
-  border-radius: 12px;
+  padding: 3px 10px;
+  border-radius: 15px;
   animation: scoreChangeAppear 0.6s ease-out;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
   white-space: nowrap;
+  position: absolute; /* 🔥 使用絕對定位 */
+  right: -15px; /* 🔥 偏右顯示 */
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .score-change.positive {
   color: #4CAF50;
-  background: rgba(76, 175, 80, 0.1);
-  border: 1px solid rgba(76, 175, 80, 0.3);
+  background: rgba(76, 175, 80, 0.15);
+  border: 2px solid rgba(76, 175, 80, 0.4);
 }
 
 .score-change.negative {
   color: #f44336;
-  background: rgba(244, 67, 54, 0.1);
-  border: 1px solid rgba(244, 67, 54, 0.3);
+  background: rgba(244, 67, 54, 0.15);
+  border: 2px solid rgba(244, 67, 54, 0.4);
 }
 
 /* 🔥 分數變化動畫 */
@@ -227,6 +232,26 @@ h1 {
   background-color: #e8f5e8;
   border-color: #4CAF50;
   transform: translateY(-2px);
+}
+
+/* 🔥 新增：鎖定狀態樣式 */
+.player-login.locked {
+  background-color: #f5f5f5;
+  border-color: #ccc;
+  opacity: 0.7;
+  transform: none;
+  pointer-events: none;
+}
+
+.player-login.locked input,
+.player-login.locked button {
+  background-color: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.player-login.locked h3 {
+  color: #999;
 }
 
 .player-login h3 {
@@ -771,14 +796,17 @@ button:disabled {
   
   /* 🔥 手機上的分數變化樣式優化 */
   .score-container {
-    flex-direction: column;
-    gap: 4px;
+    position: relative;
+    gap: 8px;
   }
   
   .score-change {
-    font-size: 14px;
-    padding: 2px 6px;
-    margin-top: 2px;
+    font-size: 16px; /* 🔥 手機上稍微小一點 */
+    padding: 2px 8px;
+    right: -10px; /* 🔥 手機上稍微調整位置 */
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
   }
   
   /* 🔥 遊戲UI區域優化 */
@@ -983,8 +1011,9 @@ button:disabled {
   
   /* 🔥 小手機上的分數變化樣式 */
   .score-change {
-    font-size: 13px;
-    padding: 1px 5px;
+    font-size: 14px;
+    padding: 2px 6px;
+    right: -8px;
   }
   
   .question {
@@ -1046,10 +1075,17 @@ button:disabled {
     justify-content: center;
   }
   
-  /* 🔥 橫屏時分數變化保持水平排列 */
+  /* 🔥 橫屏時分數變化保持右側定位 */
   .score-container {
-    flex-direction: row;
+    position: relative;
     gap: 8px;
+  }
+  
+  .score-change {
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
   }
 }
 

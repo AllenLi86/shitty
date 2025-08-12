@@ -252,31 +252,7 @@ class GameUI {
       `;
     }
     
-    // 🔥 新增：顯示分數變化詳細說明
-    if (scoreChanges) {
-      const guesserChange = this.formatScoreChange(scoreChanges.guesser);
-      const answererChange = this.formatScoreChange(scoreChanges.answerer);
-      
-      let scoreChangeHTML = '<div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.8); border-radius: 8px; font-size: 16px;">';
-      scoreChangeHTML += '<div style="font-weight: bold; margin-bottom: 10px;">📊 分數變化：</div>';
-      
-      if (guesserChange) {
-        const changeColor = scoreChanges.guesser > 0 ? '#4CAF50' : '#f44336';
-        scoreChangeHTML += `<div style="color: ${changeColor};">• ${guesserName}：${guesserChange}</div>`;
-      }
-      
-      if (answererChange) {
-        const changeColor = scoreChanges.answerer > 0 ? '#4CAF50' : '#f44336';
-        scoreChangeHTML += `<div style="color: ${changeColor};">• ${answererName}：${answererChange}</div>`;
-      }
-      
-      if (!guesserChange && !answererChange) {
-        scoreChangeHTML += '<div style="color: #666;">• 無分數變化</div>';
-      }
-      
-      scoreChangeHTML += '</div>';
-      resultHTML += scoreChangeHTML;
-    }
+    // 🔥 移除：不在結果頁面重複顯示分數變化（因為記分板已經顯示）
     
     document.getElementById('result-text').innerHTML = resultHTML;
     
