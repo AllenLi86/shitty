@@ -28,28 +28,11 @@ class AIService {
         services.push({
           name: 'groq-llama-70b',
           displayName: 'Groq Llama 3.1 70B (免費・高品質)',
-          model: 'llama-3.1-70b-versatile',
+          model: 'llama-3.3-70b-versatile',
           client: groq,
           type: 'groq'
         });
-        
-        // 🔥 移除廢棄的 mixtral 模型，改用其他替代方案
-        services.push({
-          name: 'groq-llama-3-8b',
-          displayName: 'Groq Llama 3 8B (免費・穩定)',
-          model: 'llama3-8b-8192',
-          client: groq,
-          type: 'groq'
-        });
-        
-        services.push({
-          name: 'groq-llama-3-70b',
-          displayName: 'Groq Llama 3 70B (免費・進階)',
-          model: 'llama3-70b-8192',
-          client: groq,
-          type: 'groq'
-        });
-        
+                
         console.log('✅ Groq services initialized');
       } catch (error) {
         console.log('❌ Groq not available:', error.message);
@@ -218,7 +201,7 @@ class AIService {
     return `生成${count}道${type === 'why' ? '為什麼' : '什麼是'}題目，難度${difficulty}。
 
 要求：
-1. 有趣且有教育意義
+1. 有趣且有教育意義，並且要基於事實，不能是幻覺
 2. 回傳JSON格式，無其他文字
 3. 格式：
 {
