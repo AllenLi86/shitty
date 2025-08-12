@@ -48,28 +48,61 @@ class GameUI {
     `;
   }
 
-  // 更新分數顯示
-  updateScoreDisplay(gameState, currentPlayer) {
+  // 🔥 新增：更新分數顯示（支援分數變化預覽）
+  updateScoreDisplay(gameState, currentPlayer, scoreChanges = null) {
     const scores = gameState.scores || { A: 0, B: 0 };
     const scoreDisplay = document.getElementById('score-display');
     
     if (scoreDisplay) {
       const isPlayerA = currentPlayer === 'A';
+      
+      // 🔥 如果有分數變化，顯示預覽
+      let playerAScoreDisplay = scores.A;
+      let playerBScoreDisplay = scores.B;
+      let playerAChange = '';
+      let playerBChange = '';
+      
+      if (scoreChanges) {
+        const guesserPlayer = gameState.currentGuesser;
+        const answererPlayer = guesserPlayer === 'A' ? 'B' : 'A';
+        
+        // 🔥 計算分數變化顯示
+        if (guesserPlayer === 'A') {
+          playerAChange = this.formatScoreChange(scoreChanges.guesser);
+          playerBChange = this.formatScoreChange(scoreChanges.answerer);
+        } else {
+          playerAChange = this.formatScoreChange(scoreChanges.answerer);
+          playerBChange = this.formatScoreChange(scoreChanges.guesser);
+        }
+      }
+      
       scoreDisplay.innerHTML = `
         <div class="scores">
-          <div class="score-item ${isPlayerA ? 'current-player' : ''}">
+          <div class="score-item ${isPlayerA ? 'current-player' : ''} ${scoreChanges ? 'score-changing' : ''}">
             <span class="player-name">${gameState.playerA.name}</span>
-            <span class="score">${scores.A}</span>
+            <span class="score-container">
+              <span class="score">${playerAScoreDisplay}</span>
+              ${playerAChange ? `<span class="score-change ${playerAChange.startsWith('+') ? 'positive' : 'negative'}">${playerAChange}</span>` : ''}
+            </span>
             ${isPlayerA ? '<div class="player-indicator">👤 你</div>' : ''}
           </div>
-          <div class="score-item ${!isPlayerA ? 'current-player' : ''}">
+          <div class="score-item ${!isPlayerA ? 'current-player' : ''} ${scoreChanges ? 'score-changing' : ''}">
             <span class="player-name">${gameState.playerB.name}</span>
-            <span class="score">${scores.B}</span>
+            <span class="score-container">
+              <span class="score">${playerBScoreDisplay}</span>
+              ${playerBChange ? `<span class="score-change ${playerBChange.startsWith('+') ? 'positive' : 'negative'}">${playerBChange}</span>` : ''}
+            </span>
             ${!isPlayerA ? '<div class="player-indicator">👤 你</div>' : ''}
           </div>
         </div>
       `;
     }
+  }
+
+  // 🔥 新增：格式化分數變化顯示
+  formatScoreChange(change) {
+    if (change === 0) return '';
+    return change > 0 ? `+${change}` : `${change}`;
   }
 
   // 顯示想想UI
@@ -133,7 +166,7 @@ class GameUI {
     // 然後顯示結算頁面
     document.getElementById('game-end-display').style.display = 'block';
     
-    // 🔧 重要：更新分數顯示區域
+    // 🔧 重要：更新分數顯示區域（不顯示變化）
     this.updateScoreDisplay(gameState, currentPlayer);
     
     const scores = gameState.scores || { A: 0, B: 0 };
@@ -187,8 +220,8 @@ class GameUI {
     document.getElementById('game-end-text').innerHTML = endHTML;
   }
 
-  // 顯示結果（加入結算按鈕）
-  showResult(gameState) {
+  // 🔥 修改：顯示結果（加入分數變化顯示）
+  showResult(gameState, scoreChanges) {
     document.getElementById('guesser-ui').style.display = 'none';
     document.getElementById('answerer-ui').style.display = 'none';
     document.getElementById('result-display').style.display = 'block';
@@ -219,18 +252,44 @@ class GameUI {
       `;
     }
     
+    // 🔥 新增：顯示分數變化詳細說明
+    if (scoreChanges) {
+      const guesserChange = this.formatScoreChange(scoreChanges.guesser);
+      const answererChange = this.formatScoreChange(scoreChanges.answerer);
+      
+      let scoreChangeHTML = '<div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.8); border-radius: 8px; font-size: 16px;">';
+      scoreChangeHTML += '<div style="font-weight: bold; margin-bottom: 10px;">📊 分數變化：</div>';
+      
+      if (guesserChange) {
+        const changeColor = scoreChanges.guesser > 0 ? '#4CAF50' : '#f44336';
+        scoreChangeHTML += `<div style="color: ${changeColor};">• ${guesserName}：${guesserChange}</div>`;
+      }
+      
+      if (answererChange) {
+        const changeColor = scoreChanges.answerer > 0 ? '#4CAF50' : '#f44336';
+        scoreChangeHTML += `<div style="color: ${changeColor};">• ${answererName}：${answererChange}</div>`;
+      }
+      
+      if (!guesserChange && !answererChange) {
+        scoreChangeHTML += '<div style="color: #666;">• 無分數變化</div>';
+      }
+      
+      scoreChangeHTML += '</div>';
+      resultHTML += scoreChangeHTML;
+    }
+    
     document.getElementById('result-text').innerHTML = resultHTML;
     
     // 顯示結算按鈕（如果滿足最少回合數要求）
     const endGameBtn = document.getElementById('end-game-btn');
     if (endGameBtn && gameState.round >= GAME_CONFIG.game.minimumRounds) {
       endGameBtn.style.display = 'inline-block';
-      console.log('顯示結算按鈕，目前回合:', gameState.round); // 除錯用
+      console.log('顯示結算按鈕，目前回合:', gameState.round);
     } else {
       if (endGameBtn) {
         endGameBtn.style.display = 'none';
       }
-      console.log('隱藏結算按鈕，目前回合:', gameState.round); // 除錯用
+      console.log('隱藏結算按鈕，目前回合:', gameState.round);
     }
   }
 

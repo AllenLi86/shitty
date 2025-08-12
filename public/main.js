@@ -324,7 +324,16 @@ function updateGameDisplay() {
   // 檢查是否要顯示結果
   if (gameState.showResult === true) {
     console.log('顯示回合結果');
-    gameUI.showResult(gameState);
+    
+    // 🔥 計算分數變化以便顯示
+    const correct = gameState.guessResult === 'correct';
+    const scoreChanges = calculateScoreChange(correct ? 'correct' : 'wrong', gameState.answererRole);
+    
+    // 🔥 先顯示分數變化在記分板上
+    gameUI.updateScoreDisplay(gameState, currentPlayer, scoreChanges);
+    
+    // 🔥 然後顯示結果頁面
+    gameUI.showResult(gameState, scoreChanges);
     return;
   }
 
@@ -345,7 +354,7 @@ function updateGameDisplay() {
   
   console.log('Updating display - isGuesser:', isGuesser, 'isAnswerer:', isAnswerer);
   
-  // 更新分數顯示
+  // 🔥 更新分數顯示（不顯示變化）
   gameUI.updateScoreDisplay(gameState, currentPlayer);
 
   if (isGuesser) {
@@ -357,30 +366,17 @@ function updateGameDisplay() {
   }
 }
 
-// 做出猜測
+// 🔥 修改：做出猜測（不立即更新分數到 Firebase，只顯示預覽）
 async function makeGuess(guess) {
   try {
     const correct = guess === gameState.answererRole;
     
-    // 計算分數變化
-    const scoreChange = calculateScoreChange(correct ? 'correct' : 'wrong', gameState.answererRole);
-    
-    // 計算新分數
-    const newScores = { ...gameState.scores };
-    const guesserPlayer = gameState.currentGuesser;
-    const answererPlayer = guesserPlayer === 'A' ? 'B' : 'A';
-    
-    newScores[guesserPlayer] += scoreChange.guesser;
-    newScores[answererPlayer] += scoreChange.answerer;
-    
-    console.log('分數變化:', scoreChange, '新分數:', newScores);
-    
-    // 更新遊戲狀態，顯示結果
+    // 🔥 重要：這裡不更新實際分數，只更新猜測結果和顯示狀態
     await firebaseUpdate('game', {
       lastGuess: guess,
       guessResult: correct ? 'correct' : 'wrong',
-      scores: newScores,
       showResult: true
+      // 🔥 注意：不在這裡更新 scores
     });
   } catch (error) {
     console.error('Error making guess:', error);
@@ -388,7 +384,7 @@ async function makeGuess(guess) {
   }
 }
 
-// 下一回合
+// 🔥 修改：下一回合（這時才真正更新分數）
 async function nextRound() {
   try {
     // 確保有題目可用
@@ -397,10 +393,25 @@ async function nextRound() {
       return;
     }
 
+    // 🔥 計算並應用分數變化
+    const correct = gameState.guessResult === 'correct';
+    const scoreChange = calculateScoreChange(correct ? 'correct' : 'wrong', gameState.answererRole);
+    
+    // 🔥 計算新分數
+    const newScores = { ...gameState.scores };
+    const guesserPlayer = gameState.currentGuesser;
+    const answererPlayer = guesserPlayer === 'A' ? 'B' : 'A';
+    
+    newScores[guesserPlayer] += scoreChange.guesser;
+    newScores[answererPlayer] += scoreChange.answerer;
+    
+    console.log('🔥 應用分數變化:', scoreChange, '新分數:', newScores);
+
     // 輪換角色，重新分配答題者角色，選擇新題目
     const nextGuesser = gameState.currentGuesser === 'A' ? 'B' : 'A';
     const nextQuestion = questionsManager.selectRandomQuestion();
     
+    // 🔥 更新遊戲狀態，包含新分數
     await firebaseUpdate('game', {
       round: gameState.round + 1,
       currentGuesser: nextGuesser,
@@ -408,7 +419,8 @@ async function nextRound() {
       answererRole: assignAnswererRole(), // 使用機率分配角色
       showResult: false,
       lastGuess: null,
-      guessResult: null
+      guessResult: null,
+      scores: newScores // 🔥 這時才真正更新分數
     });
   } catch (error) {
     console.error('Error starting next round:', error);
@@ -438,11 +450,30 @@ async function endGame() {
   console.log('✅ 正在結算遊戲...');
   
   try {
+    // 🔥 如果現在正在顯示結果頁面，需要先應用分數變化
+    let finalScores = { ...gameState.scores };
+    
+    if (gameState.showResult === true && gameState.guessResult) {
+      console.log('🔥 結算前先應用當前回合的分數變化');
+      
+      const correct = gameState.guessResult === 'correct';
+      const scoreChange = calculateScoreChange(correct ? 'correct' : 'wrong', gameState.answererRole);
+      
+      const guesserPlayer = gameState.currentGuesser;
+      const answererPlayer = guesserPlayer === 'A' ? 'B' : 'A';
+      
+      finalScores[guesserPlayer] += scoreChange.guesser;
+      finalScores[answererPlayer] += scoreChange.answerer;
+      
+      console.log('🔥 結算時的最終分數:', finalScores);
+    }
+    
     // 更新遊戲狀態為結束
     const updateData = {
       gameEnded: true,
       gameStarted: false,
-      showResult: false
+      showResult: false,
+      scores: finalScores // 🔥 確保使用最終分數
     };
     
     console.log('📤 準備更新的資料:', updateData);
@@ -501,46 +532,6 @@ async function newGame() {
     alert('重置遊戲失敗，請稍後再試！');
   }
 }
-
-// // ========== AI 題目生成（給 admin 使用）==========
-// async function generateAIQuestions() {
-//   const type = document.getElementById('ai-type')?.value || 'why';
-//   const difficulty = parseInt(document.getElementById('ai-difficulty')?.value || '1');
-//   const count = parseInt(document.getElementById('ai-count')?.value || '5');
-  
-//   try {
-//     // 顯示載入狀態
-//     const button = event.target;
-//     const originalText = button.textContent;
-//     button.textContent = '生成中...';
-//     button.disabled = true;
-    
-//     const result = await generateQuestions(type, difficulty, count);
-    
-//     if (result.success) {
-//       alert(`成功生成 ${result.generated.length} 道題目！\n總題目數：${result.totalCount}`);
-//       // 重新載入題目列表（如果是在 admin 頁面）
-//       if (typeof loadQuestions === 'function') {
-//         loadQuestions();
-//       }
-//     } else {
-//       alert('生成題目失敗：' + result.error);
-//     }
-    
-//     // 恢復按鈕狀態
-//     button.textContent = originalText;
-//     button.disabled = false;
-    
-//   } catch (error) {
-//     console.error('Error generating AI questions:', error);
-//     alert('生成題目時發生錯誤，請稍後再試！');
-    
-//     // 恢復按鈕狀態
-//     const button = event.target;
-//     button.textContent = '生成題目';
-//     button.disabled = false;
-//   }
-// }
 
 // ========== 頁面載入時初始化 ==========
 window.addEventListener('load', () => {
