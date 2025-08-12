@@ -448,7 +448,7 @@ function startGameTimer() {
     timeLeft--;
     updateTimer();
 
-    if (timeLeft <= 0) {
+    if (timeLeft < 0) {
       clearInterval(gameTimer);
       gameTimer = null;
       onTimerExpired();
@@ -481,11 +481,9 @@ function stopGameTimer() {
 function onTimerExpired() {
   console.log('🔥 計時器到期！');
   
-  // 隱藏計時器
-  const timerDisplay = document.getElementById('timer-display');
-  if (timerDisplay) {
-    timerDisplay.style.display = 'none';
-  }
+  // 🔥 不隱藏計時器，讓它保留在 0 的狀態
+  // const timerDisplay = document.getElementById('timer-display');
+  // timerDisplay.style.display = 'none';
   
   // 檢查當前玩家狀態和設定
   console.log('🔥 當前玩家:', currentPlayer);
@@ -509,13 +507,10 @@ function onTimerExpired() {
         explanation.classList.add('timer-dimmed');
         console.log('🔥 已變淡解答');
       }
-    } else {
-      console.log('🔥 解答區域不存在或已隱藏');
     }
-  } else {
-    console.log('🔥 不需要應用計時效果 - isAnswerer:', isAnswerer, 'isHonest:', isHonest);
   }
 }
+
 function updateGameDisplay() {
   // 確保遊戲狀態存在且有效
   if (!gameState) {
@@ -583,7 +578,16 @@ function updateGameDisplay() {
   console.log('Updating display - isGuesser:', isGuesser, 'isAnswerer:', isAnswerer);
   
   // 🔥 更新分數顯示（不顯示變化）
-  gameUI.updateScoreDisplay(gameState, currentPlayer);
+  try {
+    console.log('🔥 執行更新分數顯示...');
+    gameUI.updateScoreDisplay(gameState, currentPlayer);
+    console.log('🔥 分數顯示更新完成');
+  } catch (error) {
+    console.error('🔥 分數顯示更新失敗:', error);
+  }
+
+  console.log('🔥 準備啟動計時器，遊戲狀態:', gameState.timerSettings);
+  startGameTimer();
 
   if (isGuesser) {
     // 顯示想想UI
