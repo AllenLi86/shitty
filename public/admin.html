@@ -410,8 +410,7 @@
         <div class="form-group">
           <label for="ai-model">AI 模型：</label>
           <select id="ai-model">
-            <option value="auto">🚀 自動選擇 (推薦)</option>
-            <!-- 動態載入其他選項 -->
+            <option value="auto">🚀 載入中...</option>
           </select>
         </div>
         <div class="form-group">
@@ -436,9 +435,22 @@
         <button onclick="generateAIQuestions()" class="ai-btn">
           ✨ 生成題目
         </button>
+        <button onclick="testAIModel()" class="ai-btn" style="background: linear-gradient(135deg, #28a745, #20c997);">
+          🧪 測試模型
+        </button>
+        <button onclick="refreshAIModels()" class="ai-btn" style="background: linear-gradient(135deg, #6f42c1, #e83e8c);">
+          🔄 重新載入
+        </button>
       </div>
       <div class="ai-hint">
-        💡 提示：支援多種 AI 模型，自動選擇可用的免費服務
+        💡 提示：
+        <ul style="margin: 5px 0; padding-left: 20px;">
+          <li>🚀 <strong>自動選擇</strong>：智能選擇最佳可用模型</li>
+          <li>⚡ <strong>Groq 模型</strong>：免費且速度極快，推薦使用</li>
+          <li>🔮 <strong>Google Gemini</strong>：免費且品質優秀</li>
+          <li>🧪 <strong>測試模型</strong>：驗證所選模型是否正常工作</li>
+          <li>🔄 <strong>重新載入</strong>：更新可用模型列表</li>
+        </ul>
       </div>
     </div>
 
@@ -1184,61 +1196,159 @@
       const modelSelect = document.getElementById('ai-model');
       if (!modelSelect) return;
       
-      // 預設選項
-      const defaultModels = [
-        { value: 'auto', text: '🚀 自動選擇 (推薦)', available: true },
-        { value: 'groq-mixtral', text: '⚡ Groq Mixtral 8x7B', available: false },
-        { value: 'groq-llama', text: '⚡ Groq Llama2 70B', available: false },
-        { value: 'gemini-pro', text: '🤖 Google Gemini Pro', available: false },
-        { value: 'openai', text: '💰 OpenAI GPT-3.5', available: false },
-        { value: 'openai-gpt4', text: '💰 OpenAI GPT-4', available: false },
-        { value: 'claude-sonnet', text: '💰 Claude 3 Sonnet', available: false },
-        { value: 'claude-haiku', text: '💰 Claude 3 Haiku', available: false }
-      ];
-      
       try {
-        // 嘗試從 API 獲取可用模型
-        const response = await fetch('/api/ai-models');
-        if (response.ok) {
-          const result = await response.json();
-          
-          if (result.success && result.models) {
-            // 標記可用的模型
-            result.models.forEach(apiModel => {
-              const model = defaultModels.find(m => m.value === apiModel.name);
-              if (model) {
-                model.available = true;
-                model.text = apiModel.displayName;
-              }
-            });
+        console.log('🤖 Loading AI models from API...');
+        
+        // 🔥 從後端 API 獲取可用模型
+        const response = await fetch('/api/ai-models', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Token': adminToken // 🔒 加入認證（雖然這個 API 可能不需要）
           }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+        
+        const result = await response.json();
+        console.log('🤖 API response:', result);
+        
+        if (result.success && result.models && Array.isArray(result.models)) {
+          // 清空現有選項
+          modelSelect.innerHTML = '';
+          
+          // 🔥 動態添加模型選項
+          result.models.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.name;
+            
+            // 🔥 根據模型類型添加圖示和說明
+            let icon = '🤖';
+            let suffix = '';
+            
+            switch (model.type) {
+              case 'auto':
+                icon = '🚀';
+                suffix = ' (智能選擇)';
+                break;
+              case 'groq':
+                icon = '⚡';
+                suffix = ' (免費・快速)';
+                break;
+              case 'gemini':
+                icon = '🔮';
+                suffix = ' (Google・免費)';
+                break;
+              case 'openai':
+                icon = '💰';
+                suffix = ' (OpenAI・付費)';
+                break;
+              case 'claude':
+                icon = '🧠';
+                suffix = ' (Anthropic・付費)';
+                break;
+            }
+            
+            option.textContent = `${icon} ${model.displayName}${suffix}`;
+            option.style.color = model.type === 'auto' ? '#28a745' : '#333';
+            
+            modelSelect.appendChild(option);
+          });
+          
+          // 🔥 預設選擇自動模式
+          modelSelect.value = 'auto';
+          
+          console.log(`✅ 載入了 ${result.models.length} 個 AI 模型`);
+          
+          // 🔥 顯示可用模型統計
+          const stats = result.models.reduce((acc, model) => {
+            acc[model.type] = (acc[model.type] || 0) + 1;
+            return acc;
+          }, {});
+          
+          console.log('🤖 模型統計:', stats);
+          
+        } else {
+          throw new Error('Invalid API response format');
+        }
+        
       } catch (error) {
-        console.log('無法載入 API 模型列表，使用預設選項');
+        console.error('❌ 載入 AI 模型失敗:', error);
+        
+        // 🔥 如果 API 失敗，提供基本的備用選項
+        modelSelect.innerHTML = `
+          <option value="auto">🚀 自動選擇 (推薦)</option>
+          <option value="groq-llama-8b" style="color: #6c757d;" disabled>⚡ Groq Llama 3.1 8B (連接失敗)</option>
+          <option value="gemini-pro" style="color: #6c757d;" disabled>🔮 Google Gemini Pro (連接失敗)</option>
+          <option value="openai-gpt35" style="color: #6c757d;" disabled>💰 OpenAI GPT-3.5 (連接失敗)</option>
+        `;
+        
+        // 🔥 顯示錯誤提示
+        showMessage(`⚠️ 無法載入 AI 模型列表: ${error.message}。使用備用選項。`, 'error');
+      }
+    }
+
+    // 🔥 新增：測試 AI 模型可用性的函數
+    async function testAIModel() {
+      const modelSelect = document.getElementById('ai-model');
+      const selectedModel = modelSelect.value;
+      
+      if (selectedModel === 'auto') {
+        showMessage('⚠️ 請先選擇具體的 AI 模型進行測試', 'error');
+        return;
       }
       
-      // 清空並重新填入選項
-      modelSelect.innerHTML = '';
-      
-      defaultModels.forEach(model => {
-        const option = document.createElement('option');
-        option.value = model.value;
+      try {
+        showMessage('🧪 測試 AI 模型中...', 'loading');
         
-        // 根據可用性調整顯示
-        if (model.available) {
-          option.textContent = `✅ ${model.text}`;
-          option.style.color = '#28a745';
+        // 🔥 生成一個簡單的測試題目
+        const result = await generateQuestions('why', 1, 1, selectedModel);
+        
+        if (result && result.success) {
+          showMessage(`✅ ${selectedModel} 測試成功！生成了 ${result.generated.length} 道題目`, 'success');
+          
+          // 🔥 顯示生成的測試題目
+          if (result.generated.length > 0) {
+            const testQuestion = result.generated[0];
+            console.log('🧪 測試題目:', testQuestion);
+            
+            const details = `
+              <details style="margin-top: 10px;">
+                <summary>查看測試題目</summary>
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 5px;">
+                  <strong>Q:</strong> ${testQuestion.question}<br>
+                  <strong>A:</strong> ${testQuestion.explanation}
+                </div>
+              </details>
+            `;
+            
+            document.getElementById('statusMessage').innerHTML += details;
+          }
+          
+          // 🔥 重新載入題目列表
+          await loadQuestions();
         } else {
-          option.textContent = `❌ ${model.text} (未設定)`;
-          option.style.color = '#6c757d';
-          option.disabled = true;
+          showMessage(`❌ ${selectedModel} 測試失敗: ${result?.error || '未知錯誤'}`, 'error');
         }
         
-        modelSelect.appendChild(option);
-      });
-      
-      console.log('✅ AI 模型選單已載入');
-    }    
+      } catch (error) {
+        console.error('🧪 AI 模型測試失敗:', error);
+        showMessage(`❌ ${selectedModel} 測試失敗: ${error.message}`, 'error');
+      }
+    }
+
+    // 🔥 新增：重新載入模型列表的函數
+    async function refreshAIModels() {
+      showMessage('🔄 重新載入 AI 模型列表...', 'loading');
+      await loadAIModels();
+      showMessage('✅ AI 模型列表已更新', 'success');
+    }
+
+    // 🔥 將函數綁定到全域，讓 HTML 可以調用
+    window.testAIModel = testAIModel;
+    window.refreshAIModels = refreshAIModels;
 
     // 新增題目
     document.getElementById('addQuestionForm').addEventListener('submit', async function(e) {

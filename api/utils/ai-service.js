@@ -11,12 +11,12 @@ class AIService {
   initializeServices() {
     const services = [];
 
-    // Groq (修正版本)
+    // Groq (更新最新模型)
     if (process.env.GROQ_API_KEY) {
       try {
         const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
         
-        // 🔥 使用最新的 Groq 模型
+        // 🔥 使用最新的 Groq 模型（2024年8月更新）
         services.push({
           name: 'groq-llama-8b',
           displayName: 'Groq Llama 3.1 8B (免費・最快)',
@@ -33,10 +33,19 @@ class AIService {
           type: 'groq'
         });
         
+        // 🔥 移除廢棄的 mixtral 模型，改用其他替代方案
         services.push({
-          name: 'groq-mixtral',
-          displayName: 'Groq Mixtral 8x7B (免費)',
-          model: 'mixtral-8x7b-32768',
+          name: 'groq-llama-3-8b',
+          displayName: 'Groq Llama 3 8B (免費・穩定)',
+          model: 'llama3-8b-8192',
+          client: groq,
+          type: 'groq'
+        });
+        
+        services.push({
+          name: 'groq-llama-3-70b',
+          displayName: 'Groq Llama 3 70B (免費・進階)',
+          model: 'llama3-70b-8192',
           client: groq,
           type: 'groq'
         });
@@ -66,6 +75,14 @@ class AIService {
           client: openai,
           type: 'openai'
         });
+
+        services.push({
+          name: 'openai-gpt4o-mini',
+          displayName: 'OpenAI GPT-4o Mini',
+          model: 'gpt-4o-mini',
+          client: openai,
+          type: 'openai'
+        });
         console.log('✅ OpenAI services initialized');
       } catch (error) {
         console.log('❌ OpenAI not available:', error.message);
@@ -78,8 +95,16 @@ class AIService {
         const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
         services.push({
           name: 'gemini-pro',
-          displayName: 'Google Gemini Pro',
+          displayName: 'Google Gemini Pro (免費)',
           model: 'gemini-pro',
+          client: genAI,
+          type: 'gemini'
+        });
+
+        services.push({
+          name: 'gemini-1.5-flash',
+          displayName: 'Google Gemini 1.5 Flash (免費・快速)',
+          model: 'gemini-1.5-flash',
           client: genAI,
           type: 'gemini'
         });
@@ -95,8 +120,8 @@ class AIService {
         const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
         services.push({
           name: 'claude-sonnet',
-          displayName: 'Claude 3 Sonnet',
-          model: 'claude-3-sonnet-20240229',
+          displayName: 'Claude 3.5 Sonnet',
+          model: 'claude-3-5-sonnet-20240620',
           client: anthropic,
           type: 'claude'
         });
@@ -143,19 +168,18 @@ class AIService {
             model: service.model,
             messages: [{ role: "user", content: prompt }],
             temperature: 0.8,
-            max_tokens: 1500, // 🔥 限制 token 數量
+            max_tokens: 1500,
           });
           return this.parseResponse(response.choices[0].message.content, modelName);
           
         case 'groq':
-          // 🔥 使用正確的 Groq API 格式
           response = await service.client.chat.completions.create({
             model: service.model,
             messages: [{ role: "user", content: prompt }],
             temperature: 0.8,
-            max_tokens: 1500, // 🔥 限制 token 使用
+            max_tokens: 1500,
             top_p: 0.9,
-            stream: false, // 🔥 不使用 streaming
+            stream: false,
           });
           return this.parseResponse(response.choices[0].message.content, modelName);
           
@@ -163,7 +187,7 @@ class AIService {
           const model = service.client.getGenerativeModel({ 
             model: service.model,
             generationConfig: {
-              maxOutputTokens: 1500, // 🔥 限制輸出 token
+              maxOutputTokens: 1500,
               temperature: 0.8,
             }
           });
@@ -174,7 +198,7 @@ class AIService {
         case 'claude':
           const message = await service.client.messages.create({
             model: service.model,
-            max_tokens: 1500, // 🔥 限制 token
+            max_tokens: 1500,
             temperature: 0.8,
             messages: [{ role: "user", content: prompt }]
           });
@@ -191,7 +215,6 @@ class AIService {
   }
 
   buildPrompt(type, difficulty, count) {
-    // 🔥 優化 prompt，減少 token 消耗但保持精準度
     return `生成${count}道${type === 'why' ? '為什麼' : '什麼是'}題目，難度${difficulty}。
 
 要求：

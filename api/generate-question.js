@@ -50,14 +50,17 @@ export default async function handler(req, res) {
     // 自動選擇模型或使用指定模型
     let selectedModel = model;
     if (model === 'auto') {
-      // 🔥 優先級：最省 token 的免費模型優先
+      // 🔥 更新優先級：移除廢棄的 mixtral，使用最新模型
       const priority = [
-        'groq-llama-8b',      // 最快最省
-        'groq-llama-70b',     // 品質更好
-        'groq-mixtral',       // 備選
-        'gemini-pro',         // Google 免費
-        'claude-haiku',       // Claude 便宜版
-        'openai-gpt35'        // 付費備選
+        'groq-llama-8b',         // Llama 3.1 8B - 最快最省
+        'groq-llama-70b',        // Llama 3.1 70B - 品質更好
+        'groq-llama-3-8b',       // Llama 3 8B - 穩定備選
+        'groq-llama-3-70b',      // Llama 3 70B - 進階備選
+        'gemini-1.5-flash',      // Google 新模型
+        'gemini-pro',            // Google 經典模型
+        'claude-haiku',          // Claude 便宜版
+        'openai-gpt4o-mini',     // OpenAI 新模型
+        'openai-gpt35'           // OpenAI 經典模型
       ];
       selectedModel = priority.find(m => availableModels.some(am => am.name === m)) || availableModels[0].name;
     }
