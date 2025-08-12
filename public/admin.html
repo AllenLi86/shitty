@@ -869,32 +869,66 @@
       }
     }
 
-    // 載入可用 AI 模型
+    // 混合方案：API 檢查 + 手動選項
     async function loadAIModels() {
+      const modelSelect = document.getElementById('ai-model');
+      if (!modelSelect) return;
+      
+      // 預設選項
+      const defaultModels = [
+        { value: 'auto', text: '🚀 自動選擇 (推薦)', available: true },
+        { value: 'groq-mixtral', text: '⚡ Groq Mixtral 8x7B', available: false },
+        { value: 'groq-llama', text: '⚡ Groq Llama2 70B', available: false },
+        { value: 'gemini-pro', text: '🤖 Google Gemini Pro', available: false },
+        { value: 'openai', text: '💰 OpenAI GPT-3.5', available: false },
+        { value: 'openai-gpt4', text: '💰 OpenAI GPT-4', available: false },
+        { value: 'claude-sonnet', text: '💰 Claude 3 Sonnet', available: false },
+        { value: 'claude-haiku', text: '💰 Claude 3 Haiku', available: false }
+      ];
+      
       try {
+        // 嘗試從 API 獲取可用模型
         const response = await fetch('/api/ai-models');
-        const result = await response.json();
-        
-        const modelSelect = document.getElementById('ai-model');
-        if (modelSelect && result.success) {
-          modelSelect.innerHTML = '';
+        if (response.ok) {
+          const result = await response.json();
           
-          result.models.forEach(model => {
-            const option = document.createElement('option');
-            option.value = model.name;
-            option.textContent = model.displayName;
-            modelSelect.appendChild(option);
-          });
+          if (result.success && result.models) {
+            // 標記可用的模型
+            result.models.forEach(apiModel => {
+              const model = defaultModels.find(m => m.value === apiModel.name);
+              if (model) {
+                model.available = true;
+                model.text = apiModel.displayName;
+              }
+            });
+          }
         }
       } catch (error) {
-        console.error('Failed to load AI models:', error);
-        // 如果載入失敗，設定預設選項
-        const modelSelect = document.getElementById('ai-model');
-        if (modelSelect) {
-          modelSelect.innerHTML = '<option value="auto">🚀 自動選擇</option>';
-        }
+        console.log('無法載入 API 模型列表，使用預設選項');
       }
-    }
+      
+      // 清空並重新填入選項
+      modelSelect.innerHTML = '';
+      
+      defaultModels.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model.value;
+        
+        // 根據可用性調整顯示
+        if (model.available) {
+          option.textContent = `✅ ${model.text}`;
+          option.style.color = '#28a745';
+        } else {
+          option.textContent = `❌ ${model.text} (未設定)`;
+          option.style.color = '#6c757d';
+          option.disabled = true;
+        }
+        
+        modelSelect.appendChild(option);
+      });
+      
+      console.log('✅ AI 模型選單已載入');
+    }    
 
     // 新增題目
     document.getElementById('addQuestionForm').addEventListener('submit', async function(e) {
