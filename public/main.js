@@ -367,9 +367,16 @@ async function startGame() {
 
 // 🔥 修正：計時器功能
 function startGameTimer() {
+  console.log('🔥 startGameTimer 被調用');
+  console.log('🔥 gameState:', gameState);
+  console.log('🔥 gameState.timerSettings:', gameState?.timerSettings);
+  
   // 如果設定為不計時，則不啟動計時器
-  if (!gameState.timerSettings || gameState.timerSettings.seconds === 0) {
-    console.log('🔥 計時設定為0，不啟動計時器');
+  if (!gameState || !gameState.timerSettings || gameState.timerSettings.seconds === 0) {
+    console.log('🔥 計時設定為0或不存在，不啟動計時器');
+    console.log('🔥 gameState存在:', !!gameState);
+    console.log('🔥 timerSettings存在:', !!gameState?.timerSettings);
+    console.log('🔥 seconds值:', gameState?.timerSettings?.seconds);
     return;
   }
 
@@ -385,6 +392,7 @@ function startGameTimer() {
     return;
   }
   
+  console.log('🔥 找到計時器元素，準備顯示');
   timerDisplay.style.display = 'flex';
 
   let timeLeft = gameState.timerSettings.seconds;
@@ -396,8 +404,12 @@ function startGameTimer() {
   
   if (!timerNumber || !timerCircle) {
     console.error('❌ 找不到計時器子元素');
+    console.error('❌ timerNumber:', timerNumber);
+    console.error('❌ timerCircle:', timerCircle);
     return;
   }
+  
+  console.log('🔥 找到所有計時器子元素，開始計時');
   
   // 更新計時器顯示
   function updateTimer() {
@@ -411,6 +423,8 @@ function startGameTimer() {
     const progress = (totalTime - timeLeft) / totalTime; // 已過去的時間比例
     const strokeDashoffset = circumference * (1 - progress); // 剩餘部分
     timerCircle.style.strokeDashoffset = strokeDashoffset;
+    
+    console.log('🔥 圓圈進度:', progress, 'strokeDashoffset:', strokeDashoffset);
     
     // 根據剩餘時間改變顏色和狀態
     timerDisplay.className = 'timer-display';
@@ -429,6 +443,7 @@ function startGameTimer() {
   updateTimer();
 
   // 啟動計時器
+  console.log('🔥 啟動 setInterval');
   gameTimer = setInterval(() => {
     timeLeft--;
     updateTimer();
@@ -633,8 +648,8 @@ async function nextRound() {
       lastGuess: null,
       guessResult: null,
       scores: newScores, // 🔥 這時才真正更新分數
-      // 🔥 保持計時設定
-      timerSettings: timerSettings
+      // 🔥 確保保持計時設定
+      timerSettings: gameState.timerSettings || timerSettings
     });
   } catch (error) {
     console.error('Error starting next round:', error);
