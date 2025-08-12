@@ -418,11 +418,19 @@ function startGameTimer() {
     // 更新數字
     timerNumber.textContent = timeLeft;
 
-    // 更新圓圈進度
-    const circumference = 2 * Math.PI * 42; // r=42，周長≈264
-    const progress = (totalTime - timeLeft) / totalTime; // 已過去的時間比例
-    const strokeDashoffset = circumference * (1 - progress); // 剩餘部分
+    // 🔥 動態計算圓周長，適應不同螢幕尺寸
+    const circle = timerCircle;
+    const radius = parseFloat(circle.getAttribute('r')) || 42;
+    const circumference = 2 * Math.PI * radius;
+    const progress = (totalTime - timeLeft) / totalTime;
+    const strokeDashoffset = circumference * (1 - progress);
+
     timerCircle.style.strokeDashoffset = strokeDashoffset;
+
+    // 🔥 新增：初始化時確保從滿圓開始
+    if (timeLeft === totalTime) {
+      timerCircle.style.strokeDashoffset = circumference; // 完整圓周，從12點開始
+    }
 
     console.log('🔥 圓圈進度:', progress, 'strokeDashoffset:', strokeDashoffset);
 
@@ -435,7 +443,7 @@ function startGameTimer() {
       timerDisplay.classList.add('timer-warning');
       timerCircle.style.stroke = '#ff9800';
     } else {
-      timerCircle.style.stroke = '#ff6b6b';
+      timerCircle.style.stroke = '#2de436ff';
     }
   }
 

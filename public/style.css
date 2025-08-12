@@ -998,7 +998,14 @@ button:disabled {
     padding: 10px;
   }
 
-  /* 🔥 新增：手機上的計時器 */
+  /* 🔥 新增：手機上的計時器優化 */
+  .timer-display {
+    margin: 15px 0;
+    /* 🔥 確保計時器不被其他元素遮擋 */
+    position: relative;
+    z-index: 100; /* 提高層級 */
+  }
+
   .timer-circle {
     width: 80px;
     height: 80px;
@@ -1014,7 +1021,8 @@ button:disabled {
     cy: 40;
     r: 34;
     stroke-width: 5;
-    stroke-dasharray: 214;
+    stroke-dasharray: 214; /* 🔥 重新計算：2 * π * 34 ≈ 214 */
+    stroke-dashoffset: 214; /* 🔥 確保初始值一致 */
   }
 
   .timer-number {
@@ -1342,6 +1350,34 @@ button:disabled {
   
   .final-score-item .score {
     font-size: 28px;
+  }
+
+  .timer-display {
+    margin: 10px 0;
+    z-index: 150; /* 更高層級 */
+  }
+  
+  .timer-circle {
+    width: 70px;
+    height: 70px;
+  }
+
+  .timer-ring {
+    width: 70px;
+    height: 70px;
+  }
+
+  .timer-ring circle {
+    cx: 35;
+    cy: 35;
+    r: 30;
+    stroke-width: 4;
+    stroke-dasharray: 188; /* 2 * π * 30 ≈ 188 */
+    stroke-dashoffset: 188;
+  }
+
+  .timer-number {
+    font-size: 20px;
   }
 }
 
