@@ -1,4 +1,87 @@
-/* 🔥 新增：分數容器和變化效果 */
+/* 🔥 新增：計時器樣式 */
+.timer-display {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+  position: relative;
+  z-index: 10;
+}
+
+.timer-circle {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.timer-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 2;
+}
+
+.timer-number {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ff6b6b;
+  line-height: 1;
+}
+
+.timer-label {
+  font-size: 14px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.timer-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: rotate(-90deg);
+  z-index: 1;
+}
+
+.timer-ring circle {
+  stroke-dasharray: 264; /* 2 * π * 42 ≈ 264 */
+  stroke-dashoffset: 264; /* 🔥 初始設為完整圓周，這樣一開始是空的 */
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+  fill: none;
+  stroke-width: 6;
+  stroke: #ff6b6b;
+}
+
+/* 🔥 計時器警告狀態 */
+.timer-warning .timer-number {
+  color: #ff9800;
+  animation: timerPulse 1s infinite;
+}
+
+.timer-critical .timer-number {
+  color: #f44336;
+  animation: timerPulse 0.5s infinite;
+}
+
+@keyframes timerPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* 🔥 新增：解答區效果樣式 */
+.explanation.timer-hidden {
+  display: none !important;
+}
+
+.explanation.timer-dimmed {
+  opacity: 0.3 !important;
+  filter: blur(1px) !important;
+  pointer-events: none !important;
+  background-color: #f0f0f0 !important;
+  color: #999 !important;
+  transition: all 0.3s ease !important;
+}/* 🔥 新增：分數容器和變化效果 */
 .score-container {
   display: flex;
   align-items: center;

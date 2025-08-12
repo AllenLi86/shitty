@@ -312,6 +312,13 @@ async function startGame() {
     timerSettings.effect = document.getElementById('timer-effect').value;
     
     console.log('🔥 遊戲設定:', timerSettings);
+    
+    // 🔥 驗證設定值
+    if (timerSeconds > 0) {
+      console.log('🔥 將啟用計時器:', timerSeconds, '秒，效果:', timerSettings.effect);
+    } else {
+      console.log('🔥 計時器已停用（設定為0秒）');
+    }
 
     // 先載入題目
     await questionsManager.loadQuestions();
@@ -358,35 +365,51 @@ async function startGame() {
   }
 }
 
-// 🔥 新增：計時器功能
+// 🔥 修正：計時器功能
 function startGameTimer() {
   // 如果設定為不計時，則不啟動計時器
   if (!gameState.timerSettings || gameState.timerSettings.seconds === 0) {
+    console.log('🔥 計時設定為0，不啟動計時器');
     return;
   }
 
   console.log('🔥 開始計時器，時間:', gameState.timerSettings.seconds, '秒');
 
+  // 確保先停止任何現有的計時器
+  stopGameTimer();
+
   // 顯示計時器
   const timerDisplay = document.getElementById('timer-display');
+  if (!timerDisplay) {
+    console.error('❌ 找不到計時器顯示元素');
+    return;
+  }
+  
   timerDisplay.style.display = 'flex';
 
   let timeLeft = gameState.timerSettings.seconds;
   const totalTime = gameState.timerSettings.seconds;
   
+  // 獲取計時器元素
+  const timerNumber = document.getElementById('timer-number');
+  const timerCircle = document.getElementById('timer-circle');
+  
+  if (!timerNumber || !timerCircle) {
+    console.error('❌ 找不到計時器子元素');
+    return;
+  }
+  
   // 更新計時器顯示
   function updateTimer() {
-    const timerNumber = document.getElementById('timer-number');
-    const timerCircle = document.getElementById('timer-circle');
-    const timerDisplay = document.getElementById('timer-display');
+    console.log('🔥 更新計時器:', timeLeft, '秒剩餘');
     
     // 更新數字
     timerNumber.textContent = timeLeft;
     
     // 更新圓圈進度
-    const circumference = 2 * Math.PI * 42; // r=42
-    const progress = (totalTime - timeLeft) / totalTime;
-    const strokeDashoffset = circumference * (1 - progress);
+    const circumference = 2 * Math.PI * 42; // r=42，周長≈264
+    const progress = (totalTime - timeLeft) / totalTime; // 已過去的時間比例
+    const strokeDashoffset = circumference * (1 - progress); // 剩餘部分
     timerCircle.style.strokeDashoffset = strokeDashoffset;
     
     // 根據剩餘時間改變顏色和狀態
@@ -402,6 +425,7 @@ function startGameTimer() {
     }
   }
 
+  // 初始顯示
   updateTimer();
 
   // 啟動計時器
@@ -418,6 +442,8 @@ function startGameTimer() {
 }
 
 function stopGameTimer() {
+  console.log('🔥 停止計時器');
+  
   if (gameTimer) {
     clearInterval(gameTimer);
     gameTimer = null;
@@ -425,12 +451,15 @@ function stopGameTimer() {
   
   // 隱藏計時器
   const timerDisplay = document.getElementById('timer-display');
-  timerDisplay.style.display = 'none';
+  if (timerDisplay) {
+    timerDisplay.style.display = 'none';
+  }
   
   // 清除解答區的效果
   const explanation = document.getElementById('answerer-explanation');
   if (explanation) {
     explanation.classList.remove('timer-hidden', 'timer-dimmed');
+    console.log('🔥 已清除解答區效果');
   }
 }
 
@@ -439,20 +468,37 @@ function onTimerExpired() {
   
   // 隱藏計時器
   const timerDisplay = document.getElementById('timer-display');
-  timerDisplay.style.display = 'none';
+  if (timerDisplay) {
+    timerDisplay.style.display = 'none';
+  }
+  
+  // 檢查當前玩家狀態和設定
+  console.log('🔥 當前玩家:', currentPlayer);
+  console.log('🔥 當前想想:', gameState.currentGuesser);
+  console.log('🔥 答題者角色:', gameState.answererRole);
+  console.log('🔥 計時效果:', gameState.timerSettings.effect);
   
   // 只有老實人才會受到影響
-  if (currentPlayer !== gameState.currentGuesser && gameState.answererRole === 'honest') {
+  const isAnswerer = currentPlayer !== gameState.currentGuesser;
+  const isHonest = gameState.answererRole === 'honest';
+  
+  if (isAnswerer && isHonest) {
     const explanation = document.getElementById('answerer-explanation');
     if (explanation && explanation.style.display !== 'none') {
       console.log('🔥 對老實人應用計時效果:', gameState.timerSettings.effect);
       
       if (gameState.timerSettings.effect === 'hide') {
         explanation.classList.add('timer-hidden');
+        console.log('🔥 已隱藏解答');
       } else if (gameState.timerSettings.effect === 'dim') {
         explanation.classList.add('timer-dimmed');
+        console.log('🔥 已變淡解答');
       }
+    } else {
+      console.log('🔥 解答區域不存在或已隱藏');
     }
+  } else {
+    console.log('🔥 不需要應用計時效果 - isAnswerer:', isAnswerer, 'isHonest:', isHonest);
   }
 }
 function updateGameDisplay() {

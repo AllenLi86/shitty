@@ -151,10 +151,14 @@ class GameUI {
     // 根據角色顯示解說
     const explanationEl = document.getElementById('answerer-explanation');
     if (role === 'honest') {
+      // 🔥 清除之前的計時效果
+      explanationEl.classList.remove('timer-hidden', 'timer-dimmed');
       explanationEl.innerHTML = `💡 正確解說：${question.explanation}`;
       explanationEl.style.display = 'block';
+      console.log('🔥 顯示老實人解答，已清除計時效果');
     } else {
       explanationEl.style.display = 'none';
+      console.log('🔥 瞎掰人不顯示解答');
     }
   }
 
