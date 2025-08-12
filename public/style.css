@@ -115,7 +115,8 @@ body {
   font-family: 'Arial', sans-serif;
   max-width: 900px;
   margin: 0 auto;
-  padding: 20px;
+  /* 🔥 移除 padding，避免背景色露出形成橫條 */
+  padding: 0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   /* 🔥 防止在手機上縮放 */
@@ -126,8 +127,13 @@ body {
 .container {
   background: white;
   padding: 30px;
+  /* 🔥 用 margin 替代 body 的 padding */
+  margin: 20px;
   border-radius: 15px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  /* 🔥 確保容器高度足夠，避免背景露出 */
+  min-height: calc(100vh - 40px);
+  box-sizing: border-box;
 }
 
 h1 {
@@ -315,8 +321,10 @@ button:disabled {
   padding: 15px;
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
-  /* 🔥 修復：移除紫色橫條 */
-  border-left: 4px solid #4CAF50;
+  /* 🔥 完全移除左邊框，避免任何顏色干擾 */
+  border-left: none;
+  /* 🔥 如果需要邊框，可以改為與遊戲主題一致的顏色 */
+  /* border-left: 4px solid #4CAF50; */
   line-height: 1.6;
 }
 
@@ -559,14 +567,19 @@ button:disabled {
 /* 🔥 手機響應式設計 (優化重點) */
 @media (max-width: 768px) {
   body {
-    padding: 10px;
+    /* 🔥 手機上也移除 padding，避免背景露出 */
+    padding: 0;
     /* 🔥 確保在手機上有適當的最小字體大小 */
     font-size: 16px;
   }
   
   .container {
+    /* 🔥 手機上用較小的 margin */
+    margin: 10px;
     padding: 20px;
     border-radius: 10px;
+    /* 🔥 確保手機上容器也完全覆蓋 */
+    min-height: calc(100vh - 20px);
   }
   
   h1 {
@@ -804,12 +817,17 @@ button:disabled {
 /* 🔥 小手機螢幕優化 (320px - 480px) */
 @media (max-width: 480px) {
   body {
-    padding: 8px;
+    /* 🔥 小手機也移除 padding */
+    padding: 0;
     font-size: 15px;
   }
   
   .container {
+    /* 🔥 小手機用更小的 margin */
+    margin: 8px;
     padding: 15px;
+    /* 🔥 確保小手機上也完全覆蓋 */
+    min-height: calc(100vh - 16px);
   }
   
   h1 {
