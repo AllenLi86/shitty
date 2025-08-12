@@ -742,9 +742,10 @@ async function newGame() {
   // 🔥 停止計時器
   stopGameTimer();
 
-  if (!currentPlayer) {
-    alert("請先選擇玩家身份");
-    return;
+  // 🔥 修改：不要立即清除 currentPlayer，先停止監聽
+  if (gameStateListener) {
+    clearInterval(gameStateListener);
+    gameStateListener = null;
   }
 
   console.log('🧹 正在清除舊遊戲狀態...');
@@ -768,17 +769,17 @@ async function newGame() {
       status.innerHTML = '';
     });
 
+    // 🔥 重置開始遊戲按鈕
+    document.getElementById('startGame').disabled = true;
+    document.getElementById('startGame').innerHTML = '開始遊戲';
+
     // 🔥 重置計時設定為預設值
     document.getElementById('timer-seconds').value = '15';
     document.getElementById('timer-effect').value = 'hide';
     timerSettings = { seconds: 15, effect: 'hide' };
 
-    // 清除本地遊戲狀態
-    gameState = null;
-    currentPlayer = null; // 🔥 重置當前玩家
-
-    // 完全重置遊戲狀態，保留玩家資訊但清除所有遊戲相關資料
-    await firebaseUpdate('game', {
+    // 完全重置遊戲狀態
+    await firebaseSet('game', {  // 🔥 改用 firebaseSet 完全重置
       gameStarted: false,
       gameEnded: false,
       round: 1,
@@ -789,12 +790,9 @@ async function newGame() {
       answererRole: null,
       lastGuess: null,
       guessResult: null,
-      // 🔥 清除玩家資訊，讓他們重新加入
       playerA: null,
       playerB: null,
-      // 🔥 清除計時設定
       timerSettings: null,
-      // 確保移除任何可能殘留的狀態
       usedQuestions: null
     });
 
@@ -803,7 +801,14 @@ async function newGame() {
     // 重置題目使用記錄
     questionsManager.resetUsedQuestions();
 
-    console.log('🎯 新遊戲重置完成');
+    // 🔥 清除本地遊戲狀態，但保持 currentPlayer 讓使用者知道自己是誰
+    gameState = null;
+    // currentPlayer = null;  // 🔥 註解掉這行，保持玩家身份
+
+    // 🔥 重新啟動監聽器，讓玩家可以重新加入
+    listenToGameState();
+
+    console.log('🎯 新遊戲重置完成，當前玩家身份保持為:', currentPlayer);
   } catch (error) {
     console.error('❌ 重置遊戲狀態失敗:', error);
     alert('重置遊戲失敗，請稍後再試！');
