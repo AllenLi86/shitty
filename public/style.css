@@ -315,7 +315,8 @@ button:disabled {
   padding: 15px;
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: 8px;
-  border-left: 4px solid #9c27b0;
+  /* 🔥 修復：移除紫色橫條 */
+  border-left: 4px solid #4CAF50;
   line-height: 1.6;
 }
 
@@ -913,32 +914,5 @@ button:disabled {
   * {
     transition: none !important;
     animation: none !important;
-  }
-}
-
-/* 🔥 深色模式支援 */
-@media (prefers-color-scheme: dark) {
-  .container {
-    background: #2d3436;
-    color: #ddd;
-  }
-  
-  .question, .explanation, .instruction, .waiting {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #ddd;
-  }
-  
-  input[type="text"] {
-    background: #2d3436;
-    color: #ddd;
-    border-color: #636e72;
-  }
-  
-  .player-login {
-    border-color: #636e72;
-  }
-  
-  .player-login.filled {
-    background-color: rgba(76, 175, 80, 0.2);
   }
 }
