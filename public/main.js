@@ -525,9 +525,11 @@ function updateGameDisplay() {
 
   // 確保有題目可用
   if (questionsManager.getQuestionsCount() === 0) {
-    console.error('沒有可用的題目');
+    console.error('❌ 沒有可用的題目，題目數量:', questionsManager.getQuestionsCount());
     return;
   }
+  
+  console.log('🔥 題目檢查通過，題目總數:', questionsManager.getQuestionsCount());
 
   // 優先檢查遊戲是否結束
   if (gameState.gameEnded === true) {
@@ -564,11 +566,16 @@ function updateGameDisplay() {
     return;
   }
 
+  console.log('🔥 檢查題目索引:', gameState.currentQuestion);
+
   const question = questionsManager.getQuestion(gameState.currentQuestion);
   if (!question) {
-    console.error('題目不存在:', gameState.currentQuestion);
+    console.error('❌ 題目不存在:', gameState.currentQuestion);
+    console.error('❌ 題目總數:', questionsManager.getQuestionsCount());
     return;
   }
+  
+  console.log('🔥 成功獲取題目:', question.question);
   
   const isGuesser = currentPlayer === gameState.currentGuesser;
   const isAnswerer = currentPlayer !== gameState.currentGuesser;
