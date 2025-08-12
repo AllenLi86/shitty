@@ -1,21 +1,21 @@
 // 🔥 新增：輸入驗證函數
 function validateTimerInput(input) {
   let value = parseInt(input.value);
-  
+
   // 移除邊框顏色類別
   input.classList.remove('input-warning', 'input-error');
-  
+
   if (isNaN(value) || value < 0) {
     input.classList.add('input-error');
     return;
   }
-  
+
   if (value > 300) {
     input.classList.add('input-warning');
     input.value = 300; // 自動限制為最大值
     return;
   }
-  
+
   // 值正常，移除所有警告樣式
   input.classList.remove('input-warning', 'input-error');
 }
@@ -87,12 +87,12 @@ function listenToGameState() {
   if (gameStateListener) {
     clearInterval(gameStateListener);
   }
-  
+
   gameStateListener = setInterval(async () => {
     try {
       const data = await firebaseGet('game');
       const currentHash = JSON.stringify(data);
-      
+
       if (currentHash !== lastGameStateHash) {
         lastGameStateHash = currentHash;
         handleGameStateChange(data);
@@ -105,7 +105,7 @@ function listenToGameState() {
 
 function handleGameStateChange(data) {
   console.log('Firebase data:', data);
-  
+
   if (!data) return;
 
   // 更新玩家狀態顯示
@@ -145,7 +145,7 @@ async function generateQuestions(type, difficulty, count = 5) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type, difficulty, count })
     });
-    
+
     if (!response.ok) throw new Error('Failed to generate questions');
     return await response.json();
   } catch (error) {
@@ -173,56 +173,56 @@ const gameUI = new GameUI();
 async function joinAsPlayer(player) {
   const nameInput = document.getElementById(`player${player}-name`);
   const name = nameInput.value.trim();
-  
+
   if (!name) {
     alert("請輸入名稱");
     return;
   }
 
   currentPlayer = player;
-  
+
   try {
     // 🔥 新增：立即鎖定另一個玩家的輸入框
     const otherPlayer = player === 'A' ? 'B' : 'A';
     const otherNameInput = document.getElementById(`player${otherPlayer}-name`);
     const otherButton = document.querySelector(`#player${otherPlayer}-section button`);
     const otherSection = document.getElementById(`player${otherPlayer}-section`);
-    
+
     // 鎖定另一個玩家的輸入和按鈕
     otherNameInput.disabled = true;
     otherButton.disabled = true;
     otherSection.classList.add('locked');
-    
+
     // 顯示鎖定提示
     document.getElementById(`player${otherPlayer}-status`).innerHTML = `🔒 此欄位已鎖定（${name} 已選擇玩家${player}）`;
 
     // 檢查是否需要重置分數
     const currentData = await firebaseGet('game');
-    
+
     // 準備新的玩家資料
     const newPlayerData = {
       name: name,
       joinedAt: Date.now()
     };
-    
+
     // 檢查玩家是否有變化
     if (currentData && currentData.gameStarted) {
       const otherPlayerName = otherNameInput.value.trim();
-      
+
       // 如果有一方玩家名稱改變，重置分數並清除遊戲狀態
       const currentPlayerName = currentData[`player${player}`]?.name;
       const otherCurrentName = currentData[`player${otherPlayer}`]?.name;
-      
+
       if (currentPlayerName !== name || (otherPlayerName && otherCurrentName !== otherPlayerName)) {
         console.log('玩家有變化，重置遊戲狀態');
-        
+
         // 重置整個遊戲狀態
         await firebaseSet('game', {
           [`player${player}`]: newPlayerData,
           gameStarted: false,
           scores: { A: 0, B: 0 }
         });
-        
+
         // 重置題目使用記錄
         questionsManager.resetUsedQuestions();
       } else {
@@ -240,7 +240,7 @@ async function joinAsPlayer(player) {
     document.getElementById(`player${player}-status`).innerHTML = `✅ ${name} 已加入`;
     nameInput.disabled = true;
     document.querySelector(`#player${player}-section button`).disabled = true;
-    
+
     // 開始監聽遊戲狀態（只監聽一次）
     if (!gameStateListener) {
       listenToGameState();
@@ -248,13 +248,13 @@ async function joinAsPlayer(player) {
   } catch (error) {
     console.error('Error joining game:', error);
     alert('加入遊戲失敗，請稍後再試！');
-    
+
     // 🔥 失敗時恢復另一個玩家的輸入框
     const otherPlayer = player === 'A' ? 'B' : 'A';
     const otherNameInput = document.getElementById(`player${otherPlayer}-name`);
     const otherButton = document.querySelector(`#player${otherPlayer}-section button`);
     const otherSection = document.getElementById(`player${otherPlayer}-section`);
-    
+
     otherNameInput.disabled = false;
     otherButton.disabled = false;
     otherSection.classList.remove('locked');
@@ -270,7 +270,7 @@ function updatePlayerStatus(data) {
     document.getElementById('playerA-name').disabled = true;
     document.querySelector('#playerA-section button').disabled = true;
   }
-  
+
   if (data.playerB && data.playerB.name) {
     document.getElementById('playerB-section').classList.add('filled');
     document.getElementById('playerB-status').innerHTML = `✅ ${data.playerB.name} 已加入`;
@@ -295,7 +295,7 @@ function updateStartButton(data) {
 // 開始遊戲
 async function startGame() {
   console.log('Start game clicked, current player:', currentPlayer);
-  
+
   if (!currentPlayer) {
     alert("請先選擇玩家身份");
     return;
@@ -304,15 +304,15 @@ async function startGame() {
   try {
     // 🔥 新增：獲取遊戲設定（加入數值驗證）
     let timerSeconds = parseInt(document.getElementById('timer-seconds').value) || 0;
-    
+
     // 🔥 限制範圍和取整數
     timerSeconds = Math.max(0, Math.min(300, Math.floor(timerSeconds)));
-    
+
     timerSettings.seconds = timerSeconds;
     timerSettings.effect = document.getElementById('timer-effect').value;
-    
+
     console.log('🔥 遊戲設定:', timerSettings);
-    
+
     // 🔥 驗證設定值
     if (timerSeconds > 0) {
       console.log('🔥 將啟用計時器:', timerSeconds, '秒，效果:', timerSettings.effect);
@@ -322,7 +322,7 @@ async function startGame() {
 
     // 先載入題目
     await questionsManager.loadQuestions();
-    
+
     if (questionsManager.getQuestionsCount() === 0) {
       alert("沒有可用的題目！");
       return;
@@ -331,17 +331,17 @@ async function startGame() {
     // 檢查當前遊戲狀態
     const data = await firebaseGet('game');
     console.log('Checking game state before start:', data);
-    
+
     if (!data || !data.playerA || !data.playerB || !data.playerA.name || !data.playerB.name) {
       alert("請等待兩個玩家都加入遊戲！");
       return;
     }
 
     console.log('Starting game...');
-    
+
     // 選擇第一題
     const firstQuestionIndex = questionsManager.selectRandomQuestion();
-    
+
     // 初始化遊戲狀態
     const initialGameState = {
       ...data, // 保留現有的玩家資訊
@@ -370,7 +370,7 @@ function startGameTimer() {
   console.log('🔥 startGameTimer 被調用');
   console.log('🔥 gameState:', gameState);
   console.log('🔥 gameState.timerSettings:', gameState?.timerSettings);
-  
+
   // 如果設定為不計時，則不啟動計時器
   if (!gameState || !gameState.timerSettings || gameState.timerSettings.seconds === 0) {
     console.log('🔥 計時設定為0或不存在，不啟動計時器');
@@ -391,41 +391,41 @@ function startGameTimer() {
     console.error('❌ 找不到計時器顯示元素');
     return;
   }
-  
+
   console.log('🔥 找到計時器元素，準備顯示');
   timerDisplay.style.display = 'flex';
 
   let timeLeft = gameState.timerSettings.seconds;
   const totalTime = gameState.timerSettings.seconds;
-  
+
   // 獲取計時器元素
   const timerNumber = document.getElementById('timer-number');
   const timerCircle = document.getElementById('timer-circle');
-  
+
   if (!timerNumber || !timerCircle) {
     console.error('❌ 找不到計時器子元素');
     console.error('❌ timerNumber:', timerNumber);
     console.error('❌ timerCircle:', timerCircle);
     return;
   }
-  
+
   console.log('🔥 找到所有計時器子元素，開始計時');
-  
+
   // 更新計時器顯示
   function updateTimer() {
     console.log('🔥 更新計時器:', timeLeft, '秒剩餘');
-    
+
     // 更新數字
     timerNumber.textContent = timeLeft;
-    
+
     // 更新圓圈進度
     const circumference = 2 * Math.PI * 42; // r=42，周長≈264
     const progress = (totalTime - timeLeft) / totalTime; // 已過去的時間比例
     const strokeDashoffset = circumference * (1 - progress); // 剩餘部分
     timerCircle.style.strokeDashoffset = strokeDashoffset;
-    
+
     console.log('🔥 圓圈進度:', progress, 'strokeDashoffset:', strokeDashoffset);
-    
+
     // 根據剩餘時間改變顏色和狀態
     timerDisplay.className = 'timer-display';
     if (timeLeft <= 3) {
@@ -448,7 +448,10 @@ function startGameTimer() {
     timeLeft--;
     updateTimer();
 
-    if (timeLeft < 0) {
+    if (timeLeft <= 0) {  // 🔥 改為 <= 0，和測試頁面保持一致
+      if (timeLeft === 0) {
+        updateTimer();  // 🔥 確保顯示0秒
+      }
       clearInterval(gameTimer);
       gameTimer = null;
       onTimerExpired();
@@ -458,18 +461,18 @@ function startGameTimer() {
 
 function stopGameTimer() {
   console.log('🔥 停止計時器');
-  
+
   if (gameTimer) {
     clearInterval(gameTimer);
     gameTimer = null;
   }
-  
+
   // 隱藏計時器
   const timerDisplay = document.getElementById('timer-display');
   if (timerDisplay) {
     timerDisplay.style.display = 'none';
   }
-  
+
   // 清除解答區的效果
   const explanation = document.getElementById('answerer-explanation');
   if (explanation) {
@@ -480,26 +483,26 @@ function stopGameTimer() {
 
 function onTimerExpired() {
   console.log('🔥 計時器到期！');
-  
+
   // 🔥 不隱藏計時器，讓它保留在 0 的狀態
   // const timerDisplay = document.getElementById('timer-display');
   // timerDisplay.style.display = 'none';
-  
+
   // 檢查當前玩家狀態和設定
   console.log('🔥 當前玩家:', currentPlayer);
   console.log('🔥 當前想想:', gameState.currentGuesser);
   console.log('🔥 答題者角色:', gameState.answererRole);
   console.log('🔥 計時效果:', gameState.timerSettings.effect);
-  
+
   // 只有老實人才會受到影響
   const isAnswerer = currentPlayer !== gameState.currentGuesser;
   const isHonest = gameState.answererRole === 'honest';
-  
+
   if (isAnswerer && isHonest) {
     const explanation = document.getElementById('answerer-explanation');
     if (explanation && explanation.style.display !== 'none') {
       console.log('🔥 對老實人應用計時效果:', gameState.timerSettings.effect);
-      
+
       if (gameState.timerSettings.effect === 'hide') {
         explanation.classList.add('timer-hidden');
         console.log('🔥 已隱藏解答');
@@ -523,7 +526,7 @@ function updateGameDisplay() {
     console.error('❌ 沒有可用的題目，題目數量:', questionsManager.getQuestionsCount());
     return;
   }
-  
+
   console.log('🔥 題目檢查通過，題目總數:', questionsManager.getQuestionsCount());
 
   // 優先檢查遊戲是否結束
@@ -545,14 +548,14 @@ function updateGameDisplay() {
 
     // 🔥 新增：確保結果頁面時停止計時器
     stopGameTimer();
-    
+
     // 🔥 計算分數變化以便顯示
     const correct = gameState.guessResult === 'correct';
     const scoreChanges = calculateScoreChange(correct ? 'correct' : 'wrong', gameState.answererRole);
-    
+
     // 🔥 先顯示分數變化在記分板上
     gameUI.updateScoreDisplay(gameState, currentPlayer, scoreChanges);
-    
+
     // 🔥 然後顯示結果頁面
     gameUI.showResult(gameState, scoreChanges);
     return;
@@ -572,14 +575,14 @@ function updateGameDisplay() {
     console.error('❌ 題目總數:', questionsManager.getQuestionsCount());
     return;
   }
-  
+
   console.log('🔥 成功獲取題目:', question.question);
-  
+
   const isGuesser = currentPlayer === gameState.currentGuesser;
   const isAnswerer = currentPlayer !== gameState.currentGuesser;
-  
+
   console.log('Updating display - isGuesser:', isGuesser, 'isAnswerer:', isAnswerer);
-  
+
   // 🔥 更新分數顯示（不顯示變化）
   try {
     console.log('🔥 執行更新分數顯示...');
@@ -606,9 +609,9 @@ async function makeGuess(guess) {
   try {
     // 🔥 停止計時器
     stopGameTimer();
-    
+
     const correct = guess === gameState.answererRole;
-    
+
     // 🔥 重要：這裡不更新實際分數，只更新猜測結果和顯示狀態
     await firebaseUpdate('game', {
       lastGuess: guess,
@@ -627,7 +630,7 @@ async function nextRound() {
   try {
     // 🔥 確保計時器已停止
     stopGameTimer();
-    
+
     // 確保有題目可用
     if (questionsManager.getQuestionsCount() === 0) {
       alert("沒有可用的題目！");
@@ -637,21 +640,21 @@ async function nextRound() {
     // 🔥 計算並應用分數變化
     const correct = gameState.guessResult === 'correct';
     const scoreChange = calculateScoreChange(correct ? 'correct' : 'wrong', gameState.answererRole);
-    
+
     // 🔥 計算新分數
     const newScores = { ...gameState.scores };
     const guesserPlayer = gameState.currentGuesser;
     const answererPlayer = guesserPlayer === 'A' ? 'B' : 'A';
-    
+
     newScores[guesserPlayer] += scoreChange.guesser;
     newScores[answererPlayer] += scoreChange.answerer;
-    
+
     console.log('🔥 應用分數變化:', scoreChange, '新分數:', newScores);
 
     // 輪換角色，重新分配答題者角色，選擇新題目
     const nextGuesser = gameState.currentGuesser === 'A' ? 'B' : 'A';
     const nextQuestion = questionsManager.selectRandomQuestion();
-    
+
     // 🔥 更新遊戲狀態，包含新分數
     await firebaseUpdate('game', {
       round: gameState.round + 1,
@@ -674,10 +677,10 @@ async function nextRound() {
 // 結束遊戲
 async function endGame() {
   console.log('🎯 結束遊戲按鈕被點擊了！');
-  
+
   // 🔥 停止計時器
   stopGameTimer();
-  
+
   if (!gameState) {
     console.log('❌ 遊戲狀態不存在');
     alert("遊戲尚未開始！");
@@ -694,26 +697,26 @@ async function endGame() {
   }
 
   console.log('✅ 正在結算遊戲...');
-  
+
   try {
     // 🔥 如果現在正在顯示結果頁面，需要先應用分數變化
     let finalScores = { ...gameState.scores };
-    
+
     if (gameState.showResult === true && gameState.guessResult) {
       console.log('🔥 結算前先應用當前回合的分數變化');
-      
+
       const correct = gameState.guessResult === 'correct';
       const scoreChange = calculateScoreChange(correct ? 'correct' : 'wrong', gameState.answererRole);
-      
+
       const guesserPlayer = gameState.currentGuesser;
       const answererPlayer = guesserPlayer === 'A' ? 'B' : 'A';
-      
+
       finalScores[guesserPlayer] += scoreChange.guesser;
       finalScores[answererPlayer] += scoreChange.answerer;
-      
+
       console.log('🔥 結算時的最終分數:', finalScores);
     }
-    
+
     // 更新遊戲狀態為結束
     const updateData = {
       gameEnded: true,
@@ -721,9 +724,9 @@ async function endGame() {
       showResult: false,
       scores: finalScores // 🔥 確保使用最終分數
     };
-    
+
     console.log('📤 準備更新的資料:', updateData);
-    
+
     await firebaseUpdate('game', updateData);
     console.log('✅ 遊戲狀態已更新為結束');
   } catch (error) {
@@ -735,10 +738,10 @@ async function endGame() {
 // 開新遊戲
 async function newGame() {
   console.log('🎮 開新遊戲按鈕被點擊了！');
-  
+
   // 🔥 停止計時器
   stopGameTimer();
-  
+
   if (!currentPlayer) {
     alert("請先選擇玩家身份");
     return;
@@ -750,26 +753,26 @@ async function newGame() {
     // 🔧 立即清除UI顯示，防止顯示舊結果
     gameUI.hideAllGameUI();
     gameUI.showLoginArea();
-    
+
     // 🔥 重置登入介面的鎖定狀態
     ['A', 'B'].forEach(player => {
       const nameInput = document.getElementById(`player${player}-name`);
       const button = document.querySelector(`#player${player}-section button`);
       const section = document.getElementById(`player${player}-section`);
       const status = document.getElementById(`player${player}-status`);
-      
+
       nameInput.disabled = false;
       nameInput.value = '';
       button.disabled = false;
       section.classList.remove('filled', 'locked');
       status.innerHTML = '';
     });
-    
+
     // 🔥 重置計時設定為預設值
     document.getElementById('timer-seconds').value = '15';
     document.getElementById('timer-effect').value = 'hide';
     timerSettings = { seconds: 15, effect: 'hide' };
-    
+
     // 清除本地遊戲狀態
     gameState = null;
     currentPlayer = null; // 🔥 重置當前玩家
@@ -794,12 +797,12 @@ async function newGame() {
       // 確保移除任何可能殘留的狀態
       usedQuestions: null
     });
-    
+
     console.log('✅ Firebase 狀態已重置');
-    
+
     // 重置題目使用記錄
     questionsManager.resetUsedQuestions();
-    
+
     console.log('🎯 新遊戲重置完成');
   } catch (error) {
     console.error('❌ 重置遊戲狀態失敗:', error);
