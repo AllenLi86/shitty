@@ -209,7 +209,179 @@ h1 {
   line-height: 1.2;
 }
 
-/* 登入區域 */
+/* 🔥 新增：遊戲設定區域樣式 */
+.game-settings {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+  border: 2px solid #e9ecef;
+}
+
+.game-settings h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  text-align: center;
+}
+
+.settings-row {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 180px;
+}
+
+.setting-group label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.setting-group select,
+.setting-group input[type="number"] {
+  padding: 8px 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  min-width: 120px;
+  text-align: center;
+  transition: border-color 0.3s ease;
+}
+
+.setting-group select:focus,
+.setting-group input[type="number"]:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.setting-group input[type="number"] {
+  cursor: text;
+}
+
+/* 🔥 新增：輸入驗證樣式 */
+.setting-group input[type="number"].input-warning {
+  border-color: #ff9800;
+  background-color: #fff3cd;
+}
+
+.setting-group input[type="number"].input-error {
+  border-color: #f44336;
+  background-color: #f8d7da;
+}
+
+.settings-hint {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.settings-hint div {
+  margin-bottom: 4px;
+}
+
+.settings-hint div:first-child {
+  font-weight: bold;
+  color: #4CAF50;
+  margin-bottom: 8px;
+}
+
+/* 🔥 新增：計時器樣式 */
+.timer-display {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+  position: relative;
+  z-index: 10;
+}
+
+.timer-circle {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.timer-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 2;
+}
+
+.timer-number {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ff6b6b;
+  line-height: 1;
+}
+
+.timer-label {
+  font-size: 14px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.timer-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: rotate(-90deg);
+  z-index: 1;
+}
+
+.timer-ring circle {
+  stroke-dasharray: 264;
+  stroke-dashoffset: 0;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+
+/* 🔥 計時器警告狀態 */
+.timer-warning .timer-number {
+  color: #ff9800;
+  animation: timerPulse 1s infinite;
+}
+
+.timer-critical .timer-number {
+  color: #f44336;
+  animation: timerPulse 0.5s infinite;
+}
+
+@keyframes timerPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* 🔥 新增：解答區效果樣式 */
+.explanation.timer-hidden {
+  display: none !important;
+}
+
+.explanation.timer-dimmed {
+  opacity: 0.3;
+  filter: blur(1px);
+  pointer-events: none;
+  background-color: #f0f0f0 !important;
+  color: #999 !important;
+  transition: all 0.3s ease;
+}
 .login-section {
   display: flex;
   justify-content: space-around;
@@ -690,8 +862,9 @@ button:disabled {
   }
 }
 
-/* 🔥 手機響應式設計 (優化重點) */
+/* 🔥 手機響應式設定區域 */
 @media (max-width: 768px) {
+  /* 原有的手機樣式... */
   body {
     /* 🔥 手機上也移除 padding，避免背景露出 */
     padding: 0;
@@ -713,6 +886,60 @@ button:disabled {
     margin-bottom: 20px;
     /* 🔥 防止長標題換行問題 */
     word-break: break-word;
+  }
+
+  /* 🔥 新增：手機上的設定區域 */
+  .game-settings {
+    padding: 15px;
+    margin: 15px 0;
+  }
+
+  .settings-row {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .setting-group {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .setting-group select,
+  .setting-group input[type="number"] {
+    width: 100%;
+    max-width: 200px;
+  }
+
+  .settings-hint {
+    font-size: 12px;
+    padding: 10px;
+  }
+
+  /* 🔥 新增：手機上的計時器 */
+  .timer-circle {
+    width: 80px;
+    height: 80px;
+  }
+
+  .timer-ring {
+    width: 80px;
+    height: 80px;
+  }
+
+  .timer-ring circle {
+    cx: 40;
+    cy: 40;
+    r: 34;
+    stroke-width: 5;
+    stroke-dasharray: 214;
+  }
+
+  .timer-number {
+    font-size: 24px;
+  }
+
+  .timer-label {
+    font-size: 12px;
   }
   
   /* 🔥 登入區域改為垂直布局 */

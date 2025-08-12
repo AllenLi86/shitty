@@ -17,7 +17,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>👑 瞎掰王（雙人同步遊戲）v1.0.0</h1>
+    <h1>👑 瞎掰王（雙人同步遊戲）v1.1.1</h1>
 
     <div id="login">
       <div class="login-section">
@@ -37,6 +37,32 @@
           <div id="playerB-status"></div>
         </div>
       </div>
+
+      <!-- 🔥 新增：遊戲設定區域 -->
+      <div class="game-settings">
+        <h3>⚙️ 遊戲設定</h3>
+        <div class="settings-row">
+          <div class="setting-group">
+            <label for="timer-seconds">⏰ 計時秒數：</label>
+            <input type="number" id="timer-seconds" min="0" max="300" value="15" placeholder="0表示不計時" oninput="validateTimerInput(this)">
+          </div>
+          
+          <div class="setting-group">
+            <label for="timer-effect">💡 老實人計時結束效果：</label>
+            <select id="timer-effect">
+              <option value="hide" selected>隱藏解答</option>
+              <option value="dim">解答變淡</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="settings-hint">
+          <div>💡 提示：</div>
+          <div>• <strong>計時秒數</strong>：輸入0表示不計時，其他數字為倒數時間（最大300秒）</div>
+          <div>• <strong>隱藏解答</strong>：時間到後老實人的解答區會完全隐藏</div>
+          <div>• <strong>解答變淡</strong>：時間到後解答區會變灰變淡，但仍可勉強看到</div>
+        </div>
+      </div>
       
       <div style="text-align: center;">
         <button id="startGame" onclick="startGame()" disabled>開始遊戲</button>
@@ -46,6 +72,19 @@
     <div id="game-area" class="game-area">
       <!-- 分數顯示區域 -->
       <div id="score-display" class="score-display"></div>
+
+      <!-- 🔥 新增：計時器顯示 -->
+      <div id="timer-display" class="timer-display" style="display: none;">
+        <div class="timer-circle">
+          <div class="timer-text">
+            <div class="timer-number" id="timer-number">15</div>
+            <div class="timer-label">秒</div>
+          </div>
+          <svg class="timer-ring" width="100" height="100">
+            <circle id="timer-circle" cx="50" cy="50" r="42" stroke="#ff6b6b" stroke-width="6" fill="none" />
+          </svg>
+        </div>
+      </div>
 
       <!-- 想想模式UI -->
       <div id="guesser-ui" class="role-ui guesser-mode" style="display: none;">

@@ -1,3 +1,25 @@
+// 🔥 新增：輸入驗證函數
+function validateTimerInput(input) {
+  let value = parseInt(input.value);
+  
+  // 移除邊框顏色類別
+  input.classList.remove('input-warning', 'input-error');
+  
+  if (isNaN(value) || value < 0) {
+    input.classList.add('input-error');
+    return;
+  }
+  
+  if (value > 300) {
+    input.classList.add('input-warning');
+    input.value = 300; // 自動限制為最大值
+    return;
+  }
+  
+  // 值正常，移除所有警告樣式
+  input.classList.remove('input-warning', 'input-error');
+}
+
 // ========== Firebase 代理函數 ==========
 // 替換原本的 Firebase 直接操作
 
@@ -135,6 +157,11 @@ async function generateQuestions(type, difficulty, count = 5) {
 // ========== 遊戲狀態 ==========
 let currentPlayer = null;
 let gameState = null;
+let gameTimer = null; // 🔥 新增：遊戲計時器
+let timerSettings = { // 🔥 新增：計時設定
+  seconds: 15,
+  effect: 'hide'
+};
 
 // 初始化管理器
 const questionsManager = new QuestionsManager();
@@ -275,6 +302,17 @@ async function startGame() {
   }
 
   try {
+    // 🔥 新增：獲取遊戲設定（加入數值驗證）
+    let timerSeconds = parseInt(document.getElementById('timer-seconds').value) || 0;
+    
+    // 🔥 限制範圍和取整數
+    timerSeconds = Math.max(0, Math.min(300, Math.floor(timerSeconds)));
+    
+    timerSettings.seconds = timerSeconds;
+    timerSettings.effect = document.getElementById('timer-effect').value;
+    
+    console.log('🔥 遊戲設定:', timerSettings);
+
     // 先載入題目
     await questionsManager.loadQuestions();
     
@@ -308,7 +346,9 @@ async function startGame() {
       answererRole: assignAnswererRole(), // 使用機率分配角色
       showResult: false,
       // 初始化分數
-      scores: { A: 0, B: 0 }
+      scores: { A: 0, B: 0 },
+      // 🔥 新增：儲存遊戲設定
+      timerSettings: timerSettings
     };
 
     await firebaseSet('game', initialGameState);
@@ -318,7 +358,103 @@ async function startGame() {
   }
 }
 
-// 更新遊戲顯示
+// 🔥 新增：計時器功能
+function startGameTimer() {
+  // 如果設定為不計時，則不啟動計時器
+  if (!gameState.timerSettings || gameState.timerSettings.seconds === 0) {
+    return;
+  }
+
+  console.log('🔥 開始計時器，時間:', gameState.timerSettings.seconds, '秒');
+
+  // 顯示計時器
+  const timerDisplay = document.getElementById('timer-display');
+  timerDisplay.style.display = 'flex';
+
+  let timeLeft = gameState.timerSettings.seconds;
+  const totalTime = gameState.timerSettings.seconds;
+  
+  // 更新計時器顯示
+  function updateTimer() {
+    const timerNumber = document.getElementById('timer-number');
+    const timerCircle = document.getElementById('timer-circle');
+    const timerDisplay = document.getElementById('timer-display');
+    
+    // 更新數字
+    timerNumber.textContent = timeLeft;
+    
+    // 更新圓圈進度
+    const circumference = 2 * Math.PI * 42; // r=42
+    const progress = (totalTime - timeLeft) / totalTime;
+    const strokeDashoffset = circumference * (1 - progress);
+    timerCircle.style.strokeDashoffset = strokeDashoffset;
+    
+    // 根據剩餘時間改變顏色和狀態
+    timerDisplay.className = 'timer-display';
+    if (timeLeft <= 3) {
+      timerDisplay.classList.add('timer-critical');
+      timerCircle.style.stroke = '#f44336';
+    } else if (timeLeft <= 5) {
+      timerDisplay.classList.add('timer-warning');
+      timerCircle.style.stroke = '#ff9800';
+    } else {
+      timerCircle.style.stroke = '#ff6b6b';
+    }
+  }
+
+  updateTimer();
+
+  // 啟動計時器
+  gameTimer = setInterval(() => {
+    timeLeft--;
+    updateTimer();
+
+    if (timeLeft <= 0) {
+      clearInterval(gameTimer);
+      gameTimer = null;
+      onTimerExpired();
+    }
+  }, 1000);
+}
+
+function stopGameTimer() {
+  if (gameTimer) {
+    clearInterval(gameTimer);
+    gameTimer = null;
+  }
+  
+  // 隱藏計時器
+  const timerDisplay = document.getElementById('timer-display');
+  timerDisplay.style.display = 'none';
+  
+  // 清除解答區的效果
+  const explanation = document.getElementById('answerer-explanation');
+  if (explanation) {
+    explanation.classList.remove('timer-hidden', 'timer-dimmed');
+  }
+}
+
+function onTimerExpired() {
+  console.log('🔥 計時器到期！');
+  
+  // 隱藏計時器
+  const timerDisplay = document.getElementById('timer-display');
+  timerDisplay.style.display = 'none';
+  
+  // 只有老實人才會受到影響
+  if (currentPlayer !== gameState.currentGuesser && gameState.answererRole === 'honest') {
+    const explanation = document.getElementById('answerer-explanation');
+    if (explanation && explanation.style.display !== 'none') {
+      console.log('🔥 對老實人應用計時效果:', gameState.timerSettings.effect);
+      
+      if (gameState.timerSettings.effect === 'hide') {
+        explanation.classList.add('timer-hidden');
+      } else if (gameState.timerSettings.effect === 'dim') {
+        explanation.classList.add('timer-dimmed');
+      }
+    }
+  }
+}
 function updateGameDisplay() {
   // 確保遊戲狀態存在且有效
   if (!gameState) {
@@ -393,6 +529,9 @@ function updateGameDisplay() {
 // 🔥 修改：做出猜測（不立即更新分數到 Firebase，只顯示預覽）
 async function makeGuess(guess) {
   try {
+    // 🔥 停止計時器
+    stopGameTimer();
+    
     const correct = guess === gameState.answererRole;
     
     // 🔥 重要：這裡不更新實際分數，只更新猜測結果和顯示狀態
@@ -411,6 +550,9 @@ async function makeGuess(guess) {
 // 🔥 修改：下一回合（這時才真正更新分數）
 async function nextRound() {
   try {
+    // 🔥 確保計時器已停止
+    stopGameTimer();
+    
     // 確保有題目可用
     if (questionsManager.getQuestionsCount() === 0) {
       alert("沒有可用的題目！");
@@ -444,7 +586,9 @@ async function nextRound() {
       showResult: false,
       lastGuess: null,
       guessResult: null,
-      scores: newScores // 🔥 這時才真正更新分數
+      scores: newScores, // 🔥 這時才真正更新分數
+      // 🔥 保持計時設定
+      timerSettings: timerSettings
     });
   } catch (error) {
     console.error('Error starting next round:', error);
@@ -455,6 +599,9 @@ async function nextRound() {
 // 結束遊戲
 async function endGame() {
   console.log('🎯 結束遊戲按鈕被點擊了！');
+  
+  // 🔥 停止計時器
+  stopGameTimer();
   
   if (!gameState) {
     console.log('❌ 遊戲狀態不存在');
@@ -510,9 +657,12 @@ async function endGame() {
   }
 }
 
-// 🔥 修改：開新遊戲（需要重置鎖定狀態）
+// 開新遊戲
 async function newGame() {
   console.log('🎮 開新遊戲按鈕被點擊了！');
+  
+  // 🔥 停止計時器
+  stopGameTimer();
   
   if (!currentPlayer) {
     alert("請先選擇玩家身份");
@@ -540,6 +690,11 @@ async function newGame() {
       status.innerHTML = '';
     });
     
+    // 🔥 重置計時設定為預設值
+    document.getElementById('timer-seconds').value = '15';
+    document.getElementById('timer-effect').value = 'hide';
+    timerSettings = { seconds: 15, effect: 'hide' };
+    
     // 清除本地遊戲狀態
     gameState = null;
     currentPlayer = null; // 🔥 重置當前玩家
@@ -559,6 +714,8 @@ async function newGame() {
       // 🔥 清除玩家資訊，讓他們重新加入
       playerA: null,
       playerB: null,
+      // 🔥 清除計時設定
+      timerSettings: null,
       // 確保移除任何可能殘留的狀態
       usedQuestions: null
     });
@@ -590,9 +747,11 @@ window.nextRound = nextRound;
 window.endGame = endGame;
 window.newGame = newGame;
 window.generateAIQuestions = generateAIQuestions;
+window.validateTimerInput = validateTimerInput; // 🔥 新增
 
 // 除錯用：確認函數有正確綁定
 console.log('🔗 函數綁定檢查:');
 console.log('endGame:', typeof window.endGame);
 console.log('newGame:', typeof window.newGame);
 console.log('generateAIQuestions:', typeof window.generateAIQuestions);
+console.log('validateTimerInput:', typeof window.validateTimerInput); // 🔥 新增
