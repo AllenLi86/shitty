@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // 🔒 權限檢查 - 修復版本
+  // 🔒 權限檢查 - async 版本
   const adminToken = req.headers['x-admin-token'] || req.headers['authorization']?.replace('Bearer ', '');
   
   console.log('🔒 Checking admin token:', {
@@ -18,7 +18,8 @@ export default async function handler(req, res) {
     headers: Object.keys(req.headers)
   });
   
-  const isValidToken = verifyAdminToken(adminToken);
+  // 🔥 現在是 async 調用
+  const isValidToken = await verifyAdminToken(adminToken);
   console.log('🔒 Token validation result:', isValidToken);
   
   if (!isValidToken) {

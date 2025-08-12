@@ -24,7 +24,8 @@ export default async function handler(req, res) {
         tokenPrefix: adminToken ? adminToken.substring(0, 10) + '...' : 'none'
       });
       
-      const isValidToken = verifyAdminToken(adminToken);
+      // 🔥 現在是 async 調用
+      const isValidToken = await verifyAdminToken(adminToken);
       console.log('🔒 Token validation result:', isValidToken);
       
       if (!isValidToken) {
