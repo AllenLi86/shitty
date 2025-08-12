@@ -502,45 +502,45 @@ async function newGame() {
   }
 }
 
-// ========== AI 題目生成（給 admin 使用）==========
-async function generateAIQuestions() {
-  const type = document.getElementById('ai-type')?.value || 'why';
-  const difficulty = parseInt(document.getElementById('ai-difficulty')?.value || '1');
-  const count = parseInt(document.getElementById('ai-count')?.value || '5');
+// // ========== AI 題目生成（給 admin 使用）==========
+// async function generateAIQuestions() {
+//   const type = document.getElementById('ai-type')?.value || 'why';
+//   const difficulty = parseInt(document.getElementById('ai-difficulty')?.value || '1');
+//   const count = parseInt(document.getElementById('ai-count')?.value || '5');
   
-  try {
-    // 顯示載入狀態
-    const button = event.target;
-    const originalText = button.textContent;
-    button.textContent = '生成中...';
-    button.disabled = true;
+//   try {
+//     // 顯示載入狀態
+//     const button = event.target;
+//     const originalText = button.textContent;
+//     button.textContent = '生成中...';
+//     button.disabled = true;
     
-    const result = await generateQuestions(type, difficulty, count);
+//     const result = await generateQuestions(type, difficulty, count);
     
-    if (result.success) {
-      alert(`成功生成 ${result.generated.length} 道題目！\n總題目數：${result.totalCount}`);
-      // 重新載入題目列表（如果是在 admin 頁面）
-      if (typeof loadQuestions === 'function') {
-        loadQuestions();
-      }
-    } else {
-      alert('生成題目失敗：' + result.error);
-    }
+//     if (result.success) {
+//       alert(`成功生成 ${result.generated.length} 道題目！\n總題目數：${result.totalCount}`);
+//       // 重新載入題目列表（如果是在 admin 頁面）
+//       if (typeof loadQuestions === 'function') {
+//         loadQuestions();
+//       }
+//     } else {
+//       alert('生成題目失敗：' + result.error);
+//     }
     
-    // 恢復按鈕狀態
-    button.textContent = originalText;
-    button.disabled = false;
+//     // 恢復按鈕狀態
+//     button.textContent = originalText;
+//     button.disabled = false;
     
-  } catch (error) {
-    console.error('Error generating AI questions:', error);
-    alert('生成題目時發生錯誤，請稍後再試！');
+//   } catch (error) {
+//     console.error('Error generating AI questions:', error);
+//     alert('生成題目時發生錯誤，請稍後再試！');
     
-    // 恢復按鈕狀態
-    const button = event.target;
-    button.textContent = '生成題目';
-    button.disabled = false;
-  }
-}
+//     // 恢復按鈕狀態
+//     const button = event.target;
+//     button.textContent = '生成題目';
+//     button.disabled = false;
+//   }
+// }
 
 // ========== 頁面載入時初始化 ==========
 window.addEventListener('load', () => {

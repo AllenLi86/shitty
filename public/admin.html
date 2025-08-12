@@ -492,10 +492,17 @@
     function isTokenValid() {
       if (!adminToken || !tokenExpiry) return false;
       if (Date.now() > parseInt(tokenExpiry)) {
-        logout();
+        clearToken(); // 🔧 改用 clearToken 而不是 logout
         return false;
       }
       return true;
+    }
+
+    // 🔧 新增：只清除 token，不跳轉頁面
+    function clearToken() {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_token_expiry');
+      adminToken = null;
     }
 
     // 登入函數
@@ -535,22 +542,33 @@
       }
     }
 
+    // 🔧 修改：重新認證函數，不跳轉頁面
+    async function reauthenticate() {
+      console.log('🔄 Token 失效，嘗試重新認證...');
+      const success = await adminLogin();
+      if (success) {
+        console.log('✅ 重新認證成功');
+        return true;
+      } else {
+        console.log('❌ 重新認證失敗');
+        return false;
+      }
+    }
+
     // 登出函數
     function logout() {
-      localStorage.removeItem('admin_token');
-      localStorage.removeItem('admin_token_expiry');
-      adminToken = null;
+      clearToken();
       window.location.href = '/';
     }
 
-    // 修改所有 API 調用，加入認證 header
+    // 🔧 修改所有 API 調用，改進錯誤處理
     async function firebaseGet(path) {
       try {
         const response = await fetch('/api/firebase-proxy', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Admin-Token': adminToken // 🔒 加入認證
+            'X-Admin-Token': adminToken
           },
           body: JSON.stringify({
             method: 'GET',
@@ -559,9 +577,14 @@
         });
         
         if (response.status === 403) {
-          alert('🔒 權限不足，請重新登入');
-          logout();
-          return;
+          console.log('🔒 權限不足，嘗試重新認證...');
+          const success = await reauthenticate();
+          if (success) {
+            // 重新認證成功，重試請求
+            return firebaseGet(path);
+          } else {
+            throw new Error('重新認證失敗');
+          }
         }
         
         if (!response.ok) throw new Error('Network response was not ok');
@@ -578,7 +601,7 @@
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Admin-Token': adminToken // 🔒 加入認證
+            'X-Admin-Token': adminToken
           },
           body: JSON.stringify({
             method: 'PUT',
@@ -588,9 +611,14 @@
         });
         
         if (response.status === 403) {
-          alert('🔒 權限不足，請重新登入');
-          logout();
-          return;
+          console.log('🔒 權限不足，嘗試重新認證...');
+          const success = await reauthenticate();
+          if (success) {
+            // 重新認證成功，重試請求
+            return firebaseSet(path, data);
+          } else {
+            throw new Error('重新認證失敗');
+          }
         }
         
         if (!response.ok) throw new Error('Network response was not ok');
@@ -608,13 +636,18 @@
           'Content-Type': 'application/json',
           'X-Admin-Token': adminToken
         },
-        body: JSON.stringify({ type, difficulty, count, model })  // 🔥 加入 model 參數
+        body: JSON.stringify({ type, difficulty, count, model })
       });
       
       if (response.status === 403) {
-        alert('🔒 權限不足，請重新登入');
-        logout();
-        return;
+        console.log('🔒 權限不足，嘗試重新認證...');
+        const success = await reauthenticate();
+        if (success) {
+          // 重新認證成功，重試請求
+          return generateQuestions(type, difficulty, count, model);
+        } else {
+          throw new Error('重新認證失敗，請重新整理頁面');
+        }
       }
       
       if (!response.ok) throw new Error('Failed to generate questions');
@@ -832,12 +865,14 @@
       `}).join('');
     }
 
-    // AI 生成題目
+    // AI 生成題目 - 修復版本
     async function generateAIQuestions() {
       const type = document.getElementById('ai-type').value;
       const difficulty = parseInt(document.getElementById('ai-difficulty').value);
       const count = parseInt(document.getElementById('ai-count').value);
-      const model = document.getElementById('ai-model').value;  // 🔥 新增這行
+      const model = document.getElementById('ai-model').value;
+      
+      console.log('🤖 開始生成 AI 題目:', { type, difficulty, count, model });
       
       try {
         const button = event?.target || document.querySelector('.ai-btn');
@@ -848,18 +883,32 @@
         
         showMessage('AI 正在生成題目...', 'loading');
         
-        const result = await generateQuestions(type, difficulty, count, model);  // 🔥 傳入 model
+        console.log('🤖 當前 token:', adminToken ? 'exists' : 'missing');
+        
+        const result = await generateQuestions(type, difficulty, count, model);
+        
+        console.log('🤖 生成結果:', result);
         
         if (result && result.success) {
-          showMessage(`✅ ${result.usedModel} 成功生成 ${result.generated.length} 道題目！`, 'success');  // 🔥 顯示使用的模型
+          showMessage(`✅ ${result.usedModel || model} 成功生成 ${result.generated.length} 道題目！`, 'success');
           await loadQuestions();
         } else {
           showMessage('生成題目失敗：' + (result?.error || '未知錯誤'), 'error');
         }
         
       } catch (error) {
-        console.error('Error generating AI questions:', error);
-        showMessage('生成失敗：' + error.message, 'error');
+        console.error('🤖 生成錯誤:', error);
+        
+        // 🔧 改進錯誤訊息
+        let errorMessage = '生成失敗：' + error.message;
+        
+        if (error.message.includes('重新認證失敗')) {
+          errorMessage = '🔒 認證失敗，請重新整理頁面重新登入';
+        } else if (error.message.includes('權限')) {
+          errorMessage = '🔒 權限不足，已嘗試重新認證';
+        }
+        
+        showMessage(errorMessage, 'error');
       } finally {
         const button = event?.target || document.querySelector('.ai-btn');
         if (button) {
@@ -868,7 +917,7 @@
         }
       }
     }
-
+    
     // 混合方案：API 檢查 + 手動選項
     async function loadAIModels() {
       const modelSelect = document.getElementById('ai-model');
