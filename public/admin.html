@@ -483,7 +483,7 @@
     </div>
   </div>
 
-  <!-- admin 認證檢查  -->
+  <!-- admin 認證檢查
   <script>
     let adminToken = localStorage.getItem('admin_token');
     let tokenExpiry = localStorage.getItem('admin_token_expiry');
@@ -668,6 +668,267 @@
 
     // 修改頁面載入事件
     window.addEventListener('load', initAdmin);
+  </script>   -->
+
+  <!-- 在 admin.html 中添加調試版本的認證程式碼 -->
+  <script>
+    let adminToken = localStorage.getItem('admin_token');
+    let tokenExpiry = localStorage.getItem('admin_token_expiry');
+
+    // 🔍 調試函數：檢查 token 狀態
+    function debugTokenStatus() {
+      console.log('🔍 Token Debug Info:');
+      console.log('- adminToken:', adminToken ? `${adminToken.substring(0, 10)}...` : 'null');
+      console.log('- tokenExpiry:', tokenExpiry);
+      console.log('- Current time:', Date.now());
+      console.log('- Time until expiry:', tokenExpiry ? parseInt(tokenExpiry) - Date.now() : 'N/A');
+      console.log('- Is valid:', isTokenValid());
+    }
+
+    // 檢查 token 是否有效
+    function isTokenValid() {
+      if (!adminToken || !tokenExpiry) {
+        console.log('🔍 Token invalid: missing token or expiry');
+        return false;
+      }
+      if (Date.now() > parseInt(tokenExpiry)) {
+        console.log('🔍 Token invalid: expired');
+        clearToken();
+        return false;
+      }
+      console.log('🔍 Token valid');
+      return true;
+    }
+
+    // 只清除 token，不跳轉頁面
+    function clearToken() {
+      console.log('🔍 Clearing token...');
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_token_expiry');
+      adminToken = null;
+      tokenExpiry = null;
+    }
+
+    // 登入函數
+    async function adminLogin() {
+      console.log('🔍 Starting admin login...');
+      const password = prompt('🔒 管理員認證\n請輸入密碼：');
+      if (!password) {
+        console.log('🔍 No password provided, redirecting...');
+        window.location.href = '/';
+        return false;
+      }
+
+      try {
+        console.log('🔍 Sending login request...');
+        const response = await fetch('/api/admin-auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
+        console.log('🔍 Login response status:', response.status);
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('🔍 Login successful, received:', {
+            tokenLength: result.token?.length,
+            expiresAt: result.expiresAt,
+            timeUntilExpiry: result.expiresAt ? result.expiresAt - Date.now() : 'N/A'
+          });
+          
+          adminToken = result.token;
+          tokenExpiry = result.expiresAt.toString();
+          localStorage.setItem('admin_token', adminToken);
+          localStorage.setItem('admin_token_expiry', tokenExpiry);
+          
+          debugTokenStatus(); // 🔍 調試
+          
+          console.log('✅ 管理員認證成功');
+          return true;
+        } else {
+          const error = await response.json();
+          console.log('🔍 Login failed:', error);
+          alert('❌ ' + (error.message || '認證失敗'));
+          window.location.href = '/';
+          return false;
+        }
+      } catch (error) {
+        console.error('🔍 Login error:', error);
+        alert('❌ 認證失敗，請稍後再試');
+        window.location.href = '/';
+        return false;
+      }
+    }
+
+    // 重新認證函數
+    async function reauthenticate() {
+      console.log('🔄 Token 失效，嘗試重新認證...');
+      debugTokenStatus(); // 🔍 調試
+      
+      const success = await adminLogin();
+      if (success) {
+        console.log('✅ 重新認證成功');
+        debugTokenStatus(); // 🔍 調試
+        return true;
+      } else {
+        console.log('❌ 重新認證失敗');
+        return false;
+      }
+    }
+
+    // 登出函數
+    function logout() {
+      console.log('🔍 Logging out...');
+      clearToken();
+      window.location.href = '/';
+    }
+
+    // 🔍 修改 API 調用，加入更多調試
+    async function firebaseGet(path) {
+      console.log('🔍 Firebase GET:', path);
+      debugTokenStatus(); // 🔍 每次 API 調用前檢查
+      
+      try {
+        const response = await fetch('/api/firebase-proxy', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Admin-Token': adminToken // 🔍 確保使用最新 token
+          },
+          body: JSON.stringify({
+            method: 'GET',
+            path: path
+          })
+        });
+        
+        console.log('🔍 Firebase GET response status:', response.status);
+        
+        if (response.status === 403) {
+          console.log('🔒 權限不足，嘗試重新認證...');
+          const success = await reauthenticate();
+          if (success) {
+            console.log('🔍 重新認證成功，重試請求...');
+            // 重新認證成功，重試請求
+            return firebaseGet(path);
+          } else {
+            throw new Error('重新認證失敗');
+          }
+        }
+        
+        if (!response.ok) throw new Error('Network response was not ok');
+        return await response.json();
+      } catch (error) {
+        console.error('🔍 Firebase GET error:', error);
+        throw error;
+      }
+    }
+
+    async function firebaseSet(path, data) {
+      console.log('🔍 Firebase SET:', path);
+      debugTokenStatus(); // 🔍 每次 API 調用前檢查
+      
+      try {
+        const response = await fetch('/api/firebase-proxy', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Admin-Token': adminToken // 🔍 確保使用最新 token
+          },
+          body: JSON.stringify({
+            method: 'PUT',
+            path: path,
+            data: data
+          })
+        });
+        
+        console.log('🔍 Firebase SET response status:', response.status);
+        
+        if (response.status === 403) {
+          console.log('🔒 權限不足，嘗試重新認證...');
+          const success = await reauthenticate();
+          if (success) {
+            console.log('🔍 重新認證成功，重試請求...');
+            // 重新認證成功，重試請求
+            return firebaseSet(path, data);
+          } else {
+            throw new Error('重新認證失敗');
+          }
+        }
+        
+        if (!response.ok) throw new Error('Network response was not ok');
+        return await response.json();
+      } catch (error) {
+        console.error('🔍 Firebase SET error:', error);
+        throw error;
+      }
+    }
+
+    async function generateQuestions(type, difficulty, count = 5, model = 'auto') {
+      console.log('🔍 Generate Questions:', { type, difficulty, count, model });
+      debugTokenStatus(); // 🔍 每次 API 調用前檢查
+      
+      const response = await fetch('/api/generate-question', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Admin-Token': adminToken // 🔍 確保使用最新 token
+        },
+        body: JSON.stringify({ type, difficulty, count, model })
+      });
+      
+      console.log('🔍 Generate Questions response status:', response.status);
+      
+      if (response.status === 403) {
+        console.log('🔒 權限不足，嘗試重新認證...');
+        const success = await reauthenticate();
+        if (success) {
+          console.log('🔍 重新認證成功，重試請求...');
+          // 重新認證成功，重試請求
+          return generateQuestions(type, difficulty, count, model);
+        } else {
+          throw new Error('重新認證失敗，請重新整理頁面');
+        }
+      }
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('🔍 Generate Questions error response:', errorText);
+        throw new Error('Failed to generate questions: ' + errorText);
+      }
+      return await response.json();
+    }
+
+    // 頁面載入時認證檢查
+    async function initAdmin() {
+      console.log('🔍 Initializing admin...');
+      debugTokenStatus(); // 🔍 初始狀態檢查
+      
+      if (!isTokenValid()) {
+        console.log('🔍 Token invalid, requesting login...');
+        const success = await adminLogin();
+        if (!success) return;
+      }
+      
+      console.log('🔍 Token valid, loading content...');
+      // 認證成功後才載入頁面內容
+      loadQuestions();
+      loadAIModels();
+    }
+
+    // 修改頁面載入事件
+    window.addEventListener('load', initAdmin);
+
+    // 🔍 添加手動調試按鈕（暫時的）
+    window.debugAuth = function() {
+      debugTokenStatus();
+      console.log('🔍 Testing token with simple request...');
+      firebaseGet('questions').then(result => {
+        console.log('🔍 Test request successful');
+      }).catch(error => {
+        console.log('🔍 Test request failed:', error);
+      });
+    };
   </script>
 
   <script>
