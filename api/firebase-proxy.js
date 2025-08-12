@@ -19,7 +19,15 @@ export default async function handler(req, res) {
     if (isQuestionsWrite) {
       const adminToken = req.headers['x-admin-token'] || req.headers['authorization']?.replace('Bearer ', '');
       
-      if (!verifyAdminToken(adminToken)) {
+      console.log('🔒 Questions write operation, checking admin token:', {
+        hasToken: !!adminToken,
+        tokenPrefix: adminToken ? adminToken.substring(0, 10) + '...' : 'none'
+      });
+      
+      const isValidToken = verifyAdminToken(adminToken);
+      console.log('🔒 Token validation result:', isValidToken);
+      
+      if (!isValidToken) {
         console.log('🔒 Admin access denied - invalid token');
         return res.status(403).json({ 
           error: 'Admin access required',

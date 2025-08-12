@@ -9,7 +9,14 @@ async function handler(req, res) {
   const { password } = req.body;
   const correctPassword = process.env.ADMIN_PASSWORD;
 
+  console.log('🔒 Admin auth attempt:', {
+    hasPassword: !!password,
+    hasEnvPassword: !!correctPassword,
+    passwordLength: password?.length
+  });
+
   if (!correctPassword) {
+    console.log('🔒 Admin password not configured in environment');
     return res.status(500).json({ error: 'Admin password not configured' });
   }
 
@@ -24,10 +31,17 @@ async function handler(req, res) {
     
     adminSessions.set(token, sessionData);
     
+    console.log('🔒 Admin login successful:', {
+      token: token.substring(0, 10) + '...',
+      expiresAt: sessionData.expiresAt,
+      sessionCount: adminSessions.size
+    });
+    
     // 清理過期的 sessions
     for (const [key, session] of adminSessions.entries()) {
       if (session.expiresAt < Date.now()) {
         adminSessions.delete(key);
+        console.log('🔒 Removed expired session:', key.substring(0, 10) + '...');
       }
     }
 
@@ -37,6 +51,7 @@ async function handler(req, res) {
       expiresAt: sessionData.expiresAt
     });
   } else {
+    console.log('🔒 Admin login failed: incorrect password');
     // 防止暴力破解，加入延遲
     await new Promise(resolve => setTimeout(resolve, 1000));
     res.status(401).json({ error: 'Invalid password' });
@@ -45,16 +60,31 @@ async function handler(req, res) {
 
 // 驗證 token 的函數
 function verifyAdminToken(token) {
-  if (!token) return false;
+  console.log('🔒 Verifying token:', {
+    hasToken: !!token,
+    tokenPrefix: token ? token.substring(0, 10) + '...' : 'none',
+    sessionCount: adminSessions.size
+  });
+  
+  if (!token) {
+    console.log('🔒 Token verification failed: no token provided');
+    return false;
+  }
   
   const session = adminSessions.get(token);
-  if (!session) return false;
+  if (!session) {
+    console.log('🔒 Token verification failed: session not found');
+    console.log('🔒 Available sessions:', Array.from(adminSessions.keys()).map(k => k.substring(0, 10) + '...'));
+    return false;
+  }
   
   if (session.expiresAt < Date.now()) {
+    console.log('🔒 Token verification failed: session expired');
     adminSessions.delete(token);
     return false;
   }
   
+  console.log('🔒 Token verification successful');
   return true;
 }
 

@@ -9,15 +9,27 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // 🔒 權限檢查
+  // 🔒 權限檢查 - 修復版本
   const adminToken = req.headers['x-admin-token'] || req.headers['authorization']?.replace('Bearer ', '');
   
-  if (!verifyAdminToken(adminToken)) {
+  console.log('🔒 Checking admin token:', {
+    hasToken: !!adminToken,
+    tokenPrefix: adminToken ? adminToken.substring(0, 10) + '...' : 'none',
+    headers: Object.keys(req.headers)
+  });
+  
+  const isValidToken = verifyAdminToken(adminToken);
+  console.log('🔒 Token validation result:', isValidToken);
+  
+  if (!isValidToken) {
+    console.log('🔒 Admin access denied - invalid token');
     return res.status(403).json({ 
       error: 'Admin access required',
       message: 'AI question generation requires admin authentication'
     });
   }
+  
+  console.log('🔒 Admin access granted');
 
   try {
     const { type, difficulty, count = 1, model = 'auto' } = req.body;
