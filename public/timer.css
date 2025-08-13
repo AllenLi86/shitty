@@ -1,17 +1,18 @@
-/* 🔥 線性進度條計時器樣式 */
+/* 🔥 線性進度條計時器樣式 - 修正版 */
 .timer-component {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 20px 0;
+  margin: 20px auto; /* 🔥 修正：添加 auto 確保水平居中 */
   padding: 15px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95); /* 🔥 修正：提高透明度，確保白色背景 */
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   min-width: 200px;
   max-width: 400px;
-  width: 100%;
+  width: fit-content; /* 🔥 修正：改為 fit-content 讓元素自適應內容寬度 */
   z-index: 100;
+  border: 1px solid rgba(0, 0, 0, 0.1); /* 🔥 新增：輕微邊框提升視覺層次 */
 }
 
 .timer-display-wrapper {
@@ -41,12 +42,13 @@
 .timer-progress-container {
   width: 100%;
   position: relative;
+  min-width: 200px; /* 🔥 新增：確保進度條有最小寬度 */
 }
 
 .timer-progress-bar {
   width: 100%;
   height: 8px;
-  background-color: #e0e0e0;
+  background-color: #e0e0e0; /* 🔥 修正：確保進度條背景是淺灰色 */
   border-radius: 4px;
   overflow: hidden;
   position: relative;
@@ -137,7 +139,7 @@
 /* 🔥 響應式設計 - 平板 */
 @media (max-width: 768px) {
   .timer-component {
-    margin: 15px 0;
+    margin: 15px auto; /* 🔥 修正：保持居中 */
     padding: 12px;
     min-width: 180px;
     max-width: 320px;
@@ -156,6 +158,10 @@
     height: 7px;
   }
   
+  .timer-progress-container {
+    min-width: 160px; /* 🔥 修正：手機版進度條最小寬度 */
+  }
+  
   .timer-display-wrapper {
     margin-bottom: 12px;
     gap: 6px;
@@ -165,7 +171,7 @@
 /* 🔥 響應式設計 - 手機 */
 @media (max-width: 480px) {
   .timer-component {
-    margin: 10px 0;
+    margin: 10px auto; /* 🔥 修正：保持居中 */
     padding: 10px;
     min-width: 160px;
     max-width: 280px;
@@ -184,6 +190,10 @@
     height: 6px;
   }
   
+  .timer-progress-container {
+    min-width: 140px; /* 🔥 修正：小手機版進度條最小寬度 */
+  }
+  
   .timer-display-wrapper {
     margin-bottom: 10px;
     gap: 5px;
@@ -197,6 +207,7 @@
     align-items: center;
     padding: 8px 15px;
     max-width: 350px;
+    margin: 10px auto; /* 🔥 修正：保持居中 */
   }
   
   .timer-display-wrapper {
@@ -215,12 +226,12 @@
 @media (prefers-contrast: high) {
   .timer-component {
     border: 2px solid #333;
-    background: #fff;
+    background: #fff !important; /* 🔥 修正：強制白色背景 */
   }
   
   .timer-progress-bar {
     border: 1px solid #333;
-    background-color: #f0f0f0;
+    background-color: #f0f0f0 !important; /* 🔥 修正：強制淺灰背景 */
   }
   
   .timer-progress-fill {
@@ -260,24 +271,53 @@
   }
 }
 
-/* 🔥 深色模式支援 */
+/* 🔥 深色模式支援 - 但不會在遊戲中自動觸發 */
 @media (prefers-color-scheme: dark) {
-  .timer-component {
-    background: rgba(33, 33, 33, 0.95);
+  /* 🔥 修正：只在明確指定深色模式時才應用，避免自動觸發 */
+  body.dark-mode .timer-component {
+    background: rgba(33, 33, 33, 0.95) !important;
     border: 1px solid #555;
     color: #fff;
   }
   
-  .timer-label {
+  body.dark-mode .timer-label {
     color: #ccc;
   }
   
-  .timer-progress-bar {
-    background-color: #444;
+  body.dark-mode .timer-progress-bar {
+    background-color: #444 !important;
     box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.1);
   }
   
-  .timer-component.timer-critical .timer-progress-bar {
+  body.dark-mode .timer-component.timer-critical .timer-progress-bar {
     box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.1), 0 0 8px rgba(244, 67, 54, 0.3);
   }
+}
+
+/* 🔥 新增：強制確保計時器容器居中 */
+#timer-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* 🔥 新增：確保在遊戲頁面中的計時器也正確居中 */
+.game-area #timer-display {
+  margin: 20px 0;
+  text-align: center;
+}
+
+/* 🔥 新增：強制覆蓋任何可能的深色背景 */
+.timer-component,
+.timer-component * {
+  color: inherit;
+}
+
+.timer-component {
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.timer-progress-bar {
+  background-color: #e0e0e0 !important;
 }

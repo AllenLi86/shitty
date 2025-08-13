@@ -1201,7 +1201,46 @@ button:disabled {
   }
 }
 
-/* 🔥 深色模式支援（如果需要） */
-@media (prefers-color-scheme: dark) {
-  /* 可以在這裡添加深色模式的樣式 */
+/* 🔥 添加到 style.css 中的計時器居中樣式 */
+/* 計時器顯示區域 - 確保居中 */
+#timer-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 20px 0;
+  /* 🔥 確保計時器容器本身是居中的 */
 }
+
+/* 在遊戲區域中的計時器特殊設定 */
+.game-area #timer-display {
+  text-align: center;
+  padding: 0 10px; /* 🔥 添加少量左右padding，避免在小螢幕上貼邊 */
+}
+
+/* 🔥 確保計時器在所有容器中都能正確居中 */
+.container #timer-display,
+.game-area #timer-display,
+.role-ui + #timer-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px auto;
+  width: 100%;
+}
+
+/* 🔥 響應式計時器居中 */
+@media (max-width: 768px) {
+  #timer-display {
+    margin: 15px 0;
+    padding: 0 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  #timer-display {
+    margin: 10px 0;
+    padding: 0;
+  }
+}
+
