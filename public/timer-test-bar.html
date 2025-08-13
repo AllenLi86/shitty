@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>線性進度條計時器 - 測試</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 120px;
+        }
+        
+        .control-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .control-group input,
+        .control-group select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .control-group input:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 100px;
+        }
+        
+        .primary-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .primary-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .secondary-btn {
+            background: #f44336;
+            color: white;
+        }
+        
+        .secondary-btn:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+        
+        .tertiary-btn {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .tertiary-btn:hover {
+            background: #0b7dda;
+            transform: translateY(-2px);
+        }
+        
+        .timer-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        
+        .status-info {
+            background: #e3f2fd;
+            border: 2px solid #2196F3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .demo-content {
+            background: #f0f0f0;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+            transition: all 0.3s ease;
+        }
+        
+        .demo-content.timer-hidden {
+            display: none !important;
+        }
+        
+        .demo-content.timer-dimmed {
+            opacity: 0.3 !important;
+            filter: blur(1px) !important;
+            pointer-events: none !important;
+            background-color: #f0f0f0 !important;
+            color: #999 !important;
+        }
+        
+        .screen-info {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 6px;
+        }
+        
+        /* 響應式優化 */
+        @media (max-width: 768px) {
+            .test-container {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .control-group {
+                min-width: auto;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    </style>
+    <!-- 引入計時器樣式 -->
+    <link rel="stylesheet" href="timer.css">
+</head>
+<body>
+    <div class="test-container">
+        <h1>🚀 線性進度條計時器</h1>
+        
+        <div class="screen-info" id="screen-info">
+            載入中...
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="timer-seconds">計時秒數</label>
+                <input type="number" id="timer-seconds" value="10" min="1" max="300">
+            </div>
+            
+            <div class="control-group">
+                <label for="warning-time">警告時間</label>
+                <input type="number" id="warning-time" value="5" min="1" max="10">
+            </div>
+            
+            <div class="control-group">
+                <label for="critical-time">危險時間</label>
+                <input type="number" id="critical-time" value="3" min="1" max="5">
+            </div>
+            
+            <div class="control-group">
+                <label for="effect-type">到期效果</label>
+                <select id="effect-type">
+                    <option value="hide">隱藏內容</option>
+                    <option value="dim">內容變淡</option>
+                    <option value="none">無效果</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button class="primary-btn" onclick="startTimer()">🚀 開始計時</button>
+            <button class="secondary-btn" onclick="stopTimer()">⏹️ 停止</button>
+            <button class="tertiary-btn" onclick="pauseTimer()">⏸️ 暫停</button>
+            <button class="tertiary-btn" onclick="resumeTimer()">▶️ 恢復</button>
+        </div>
+        
+        <!-- 計時器容器 -->
+        <div class="timer-container">
+            <div id="timer-display"></div>
+        </div>
+        
+        <div class="status-info" id="status-info">
+            計時器狀態：未啟動
+        </div>
+        
+        <!-- 測試內容 -->
+        <div class="demo-content" id="demo-content">
+            💡 這是測試內容區域。
+            <br><br>
+            當計時器到期時，根據設定，這個區域會：
+            <ul>
+                <li>隱藏內容：完全隱藏這個區域</li>
+                <li>內容變淡：變淡並禁止互動</li>
+                <li>無效果：保持原樣</li>
+            </ul>
+            <br>
+            線性進度條的優點：
+            <ul>
+                <li>✅ 手機響應更好</li>
+                <li>✅ 視覺效果清晰</li>
+                <li>✅ 不會有遮擋問題</li>
+                <li>✅ 適合各種螢幕尺寸</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- 引入計時器元件 -->
+    <script src="timer.js"></script>
+    
+    <script>
+        // 全域變數
+        let gameTimer = null;
+        
+        // 更新螢幕資訊
+        function updateScreenInfo() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const devicePixelRatio = window.devicePixelRatio || 1;
+            
+            let sizeCategory = '';
+            if (width > 768) sizeCategory = '桌面版';
+            else if (width > 480) sizeCategory = '平板/大手機';
+            else sizeCategory = '小手機';
+            
+            document.getElementById('screen-info').innerHTML = 
+                `螢幕尺寸: ${width} × ${height} | 設備比例: ${devicePixelRatio} | 分類: ${sizeCategory}`;
+        }
+        
+        // 開始計時器
+        function startTimer() {
+            const seconds = parseInt(document.getElementById('timer-seconds').value) || 10;
+            const warningTime = parseInt(document.getElementById('warning-time').value) || 5;
+            const criticalTime = parseInt(document.getElementById('critical-time').value) || 3;
+            const effectType = document.getElementById('effect-type').value;
+            
+            console.log('🔥 開始計時器:', { seconds, warningTime, criticalTime, effectType });
+            
+            // 重置內容狀態
+            resetContent();
+            
+            // 停止現有計時器
+            if (gameTimer) {
+                gameTimer.destroy();
+            }
+            
+            // 創建新計時器
+            gameTimer = new Timer('timer-display', {
+                warningTime: warningTime,
+                criticalTime: criticalTime,
+                hideOnExpired: false,
+                onUpdate: (timeLeft, totalTime) => {
+                    updateStatusInfo(timeLeft, totalTime);
+                },
+                onExpired: () => {
+                    onTimerExpired(effectType);
+                }
+            });
+            
+            // 開始計時
+            gameTimer.start(seconds);
+            
+            updateStatusInfo(seconds, seconds);
+        }
+        
+        // 停止計時器
+        function stopTimer() {
+            if (gameTimer) {
+                gameTimer.stop();
+                updateStatusInfo(0, 0, '已停止');
+            }
+            resetContent();
+        }
+        
+        // 暫停計時器
+        function pauseTimer() {
+            if (gameTimer) {
+                gameTimer.pause();
+                const state = gameTimer.getState();
+                updateStatusInfo(state.timeLeft, state.totalTime, '已暫停');
+            }
+        }
+        
+        // 恢復計時器
+        function resumeTimer() {
+            if (gameTimer) {
+                gameTimer.resume();
+                const state = gameTimer.getState();
+                updateStatusInfo(state.timeLeft, state.totalTime, '運行中');
+            }
+        }
+        
+        // 計時器到期處理
+        function onTimerExpired(effectType) {
+            console.log('🔥 計時器到期！效果:', effectType);
+            
+            const demoContent = document.getElementById('demo-content');
+            
+            switch(effectType) {
+                case 'hide':
+                    demoContent.classList.add('timer-hidden');
+                    updateStatusInfo(0, 0, '時間到 - 內容已隱藏');
+                    break;
+                case 'dim':
+                    demoContent.classList.add('timer-dimmed');
+                    updateStatusInfo(0, 0, '時間到 - 內容已變淡');
+                    break;
+                case 'none':
+                default:
+                    updateStatusInfo(0, 0, '時間到 - 無效果');
+                    break;
+            }
+        }
+        
+        // 重置內容狀態
+        function resetContent() {
+            const demoContent = document.getElementById('demo-content');
+            demoContent.classList.remove('timer-hidden', 'timer-dimmed');
+        }
+        
+        // 更新狀態資訊
+        function updateStatusInfo(timeLeft, totalTime, customStatus = null) {
+            const statusInfo = document.getElementById('status-info');
+            
+            if (customStatus) {
+                statusInfo.textContent = `計時器狀態：${customStatus}`;
+                return;
+            }
+            
+            if (totalTime === 0) {
+                statusInfo.textContent = '計時器狀態：未啟動';
+                return;
+            }
+            
+            const progress = ((totalTime - timeLeft) / totalTime * 100).toFixed(1);
+            const state = gameTimer ? gameTimer.getState() : {};
+            
+            statusInfo.innerHTML = `
+                計時器狀態：${state.isRunning ? '運行中' : '已停止'} | 
+                剩餘時間：${timeLeft}秒 | 
+                總時間：${totalTime}秒 | 
+                進度：${progress}%
+            `;
+        }
+        
+        // 頁面載入時的初始化
+        window.addEventListener('load', () => {
+            updateScreenInfo();
+            updateStatusInfo(0, 0);
+        });
+        
+        // 監聽視窗大小變化
+        window.addEventListener('resize', updateScreenInfo);
+        
+        // 監聽設備方向變化
+        window.addEventListener('orientationchange', () => {
+            setTimeout(updateScreenInfo, 500);
+        });
+        
+        // 清理函數（頁面卸載時）
+        window.addEventListener('beforeunload', () => {
+            if (gameTimer) {
+                gameTimer.destroy();
+            }
+        });
+    </script>
+</body>
+</html>

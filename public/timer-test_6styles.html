@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>計時器型式選擇測試</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    .controls {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .controls input, .controls select, .controls button {
+      margin: 5px;
+      padding: 8px 12px;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .controls button {
+      background: #4CAF50;
+      color: white;
+      border: 2px solid #4CAF50;
+      cursor: pointer;
+      min-width: 120px;
+    }
+
+    .controls button:hover {
+      background: #45a049;
+    }
+
+    .timer-types {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      margin: 30px 0;
+    }
+
+    .timer-type {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      border: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .timer-type:hover {
+      border-color: #4CAF50;
+      transform: translateY(-5px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .timer-type.active {
+      border-color: #ff6b6b;
+      background: #fff5f5;
+    }
+
+    .timer-type h3 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    /* 🔥 型式1：經典圓形進度條 */
+    .timer-circle-classic {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto;
+    }
+
+    .timer-circle-classic .timer-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 2;
+    }
+
+    .timer-circle-classic .timer-number {
+      font-size: 20px;
+      font-weight: bold;
+      color: #ff6b6b;
+      line-height: 1;
+    }
+
+    .timer-circle-classic .timer-label {
+      font-size: 10px;
+      color: #666;
+    }
+
+    .timer-circle-classic svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: rotate(-90deg);
+    }
+
+    .timer-circle-classic circle {
+      fill: none;
+      stroke-width: 4;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s linear;
+    }
+
+    .timer-circle-classic .bg {
+      stroke: #e0e0e0;
+    }
+
+    .timer-circle-classic .progress {
+      stroke: #ff6b6b;
+      stroke-dasharray: 188;
+      stroke-dashoffset: 188;
+    }
+
+    /* 🔥 型式2：方形進度條 */
+    .timer-square {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto;
+      background: #f0f0f0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .timer-square .progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: linear-gradient(to top, #ff6b6b, #ff9800);
+      transition: height 1s ease;
+      height: 100%;
+    }
+
+    .timer-square .timer-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+    }
+
+    .timer-square .timer-number {
+      font-size: 20px;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .timer-square .timer-label {
+      font-size: 10px;
+    }
+
+    /* 🔥 型式3：線性進度條 */
+    .timer-linear {
+      width: 200px;
+      margin: 20px auto;
+    }
+
+    .timer-linear .timer-info {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .timer-linear .timer-number {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ff6b6b;
+    }
+
+    .timer-linear .timer-label {
+      font-size: 12px;
+      color: #666;
+      margin-left: 5px;
+    }
+
+    .timer-linear .progress-track {
+      width: 100%;
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .timer-linear .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff6b6b, #ff9800);
+      border-radius: 4px;
+      transition: width 1s ease;
+      width: 100%;
+    }
+
+    /* 🔥 型式4：數字翻轉 */
+    .timer-flip {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      margin: 20px auto;
+    }
+
+    .timer-flip .digit {
+      width: 40px;
+      height: 60px;
+      background: #333;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ff6b6b;
+      font-size: 28px;
+      font-weight: bold;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .timer-flip .digit::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #555;
+    }
+
+    .timer-flip .separator {
+      color: #333;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    /* 🔥 型式5：脈衝圓點 */
+    .timer-pulse {
+      margin: 20px auto;
+      text-align: center;
+    }
+
+    .timer-pulse .pulse-container {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 10px;
+    }
+
+    .timer-pulse .pulse-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      border: 3px solid #ff6b6b;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .timer-pulse .pulse-core {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      background: #ff6b6b;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+    }
+
+    /* 🔥 型式6：霓虹燈效果 */
+    .timer-neon {
+      margin: 20px auto;
+      text-align: center;
+    }
+
+    .timer-neon .neon-text {
+      font-size: 36px;
+      font-weight: bold;
+      color: #ff6b6b;
+      text-shadow: 
+        0 0 5px #ff6b6b,
+        0 0 10px #ff6b6b,
+        0 0 15px #ff6b6b,
+        0 0 20px #ff6b6b;
+      animation: neonGlow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes neonGlow {
+      from {
+        text-shadow: 
+          0 0 5px #ff6b6b,
+          0 0 10px #ff6b6b,
+          0 0 15px #ff6b6b,
+          0 0 20px #ff6b6b;
+      }
+      to {
+        text-shadow: 
+          0 0 2px #ff6b6b,
+          0 0 5px #ff6b6b,
+          0 0 8px #ff6b6b,
+          0 0 12px #ff6b6b,
+          0 0 15px #ff9800,
+          0 0 20px #ff9800;
+      }
+    }
+
+    /* 警告狀態 */
+    .warning .timer-number,
+    .warning .neon-text {
+      color: #ff9800 !important;
+    }
+
+    .warning .progress,
+    .warning .progress-fill,
+    .warning .progress-bar {
+      background: #ff9800 !important;
+      stroke: #ff9800 !important;
+    }
+
+    .critical .timer-number,
+    .critical .neon-text {
+      color: #f44336 !important;
+      animation: timerPulse 0.5s infinite;
+    }
+
+    .critical .progress,
+    .critical .progress-fill,
+    .critical .progress-bar {
+      background: #f44336 !important;
+      stroke: #f44336 !important;
+    }
+
+    @keyframes timerPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .type-selector {
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .type-selector button {
+      margin: 5px;
+      padding: 8px 16px;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .type-selector button.active {
+      background: #ff6b6b;
+    }
+
+    .type-selector button:hover {
+      background: #5a6268;
+    }
+
+    .type-selector button.active:hover {
+      background: #e55a5a;
+    }
+
+    @media (max-width: 768px) {
+      .timer-types {
+        grid-template-columns: 1fr;
+      }
+      
+      .container {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🕐 計時器型式選擇測試</h1>
+    
+    <div class="controls">
+      <label>計時秒數：</label>
+      <input type="number" id="timer-input" value="10" min="3" max="60">
+      
+      <label>選擇型式：</label>
+      <select id="timer-style">
+        <option value="all">顯示全部</option>
+        <option value="classic">經典圓形</option>
+        <option value="square">方形進度</option>
+        <option value="linear">線性進度</option>
+        <option value="flip">數字翻轉</option>
+        <option value="pulse">脈衝圓點</option>
+        <option value="neon">霓虹燈效果</option>
+      </select>
+      
+      <button onclick="startAllTimers()">🚀 開始測試</button>
+      <button onclick="stopAllTimers()">⏹️ 停止測試</button>
+      <button onclick="resetAllTimers()">🔄 重置</button>
+    </div>
+
+    <div class="type-selector">
+      <h3>💡 快速選擇推薦型式：</h3>
+      <button onclick="selectStyle('classic')" id="btn-classic">經典圓形</button>
+      <button onclick="selectStyle('square')" id="btn-square">方形進度</button>
+      <button onclick="selectStyle('linear')" id="btn-linear">線性進度</button>
+      <button onclick="selectStyle('flip')" id="btn-flip">數字翻轉</button>
+      <button onclick="selectStyle('pulse')" id="btn-pulse">脈衝圓點</button>
+      <button onclick="selectStyle('neon')" id="btn-neon">霓虹燈效果</button>
+    </div>
+
+    <div class="timer-types">
+      <!-- 型式1：經典圓形進度條 -->
+      <div class="timer-type" id="type-classic">
+        <h3>🎯 經典圓形進度條</h3>
+        <p>傳統的圓形計時器，清晰易讀</p>
+        <div class="timer-circle-classic">
+          <div class="timer-text">
+            <div class="timer-number" id="classic-number">10</div>
+            <div class="timer-label">秒</div>
+          </div>
+          <svg width="80" height="80">
+            <circle class="bg" cx="40" cy="40" r="30"></circle>
+            <circle class="progress" id="classic-progress" cx="40" cy="40" r="30"></circle>
+          </svg>
+        </div>
+      </div>
+
+      <!-- 型式2：方形進度條 -->
+      <div class="timer-type" id="type-square">
+        <h3>📱 方形進度條</h3>
+        <p>現代感強，適合手機界面</p>
+        <div class="timer-square">
+          <div class="progress-bar" id="square-progress"></div>
+          <div class="timer-text">
+            <div class="timer-number" id="square-number">10</div>
+            <div class="timer-label">秒</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 型式3：線性進度條 -->
+      <div class="timer-type" id="type-linear">
+        <h3>📏 線性進度條</h3>
+        <p>簡潔明了，節省空間</p>
+        <div class="timer-linear">
+          <div class="timer-info">
+            <span class="timer-number" id="linear-number">10</span>
+            <span class="timer-label">秒</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="linear-progress"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 型式4：數字翻轉 -->
+      <div class="timer-type" id="type-flip">
+        <h3>🔢 數字翻轉式</h3>
+        <p>復古風格，像老式時鐘</p>
+        <div class="timer-flip">
+          <div class="digit" id="flip-tens">0</div>
+          <div class="digit" id="flip-ones">10</div>
+          <div style="margin-left: 5px; font-size: 12px; color: #666;">秒</div>
+        </div>
+      </div>
+
+      <!-- 型式5：脈衝圓點 -->
+      <div class="timer-type" id="type-pulse">
+        <h3>💫 脈衝圓點</h3>
+        <p>動感十足，吸引注意力</p>
+        <div class="timer-pulse">
+          <div class="pulse-container">
+            <div class="pulse-ring"></div>
+            <div class="pulse-core" id="pulse-number">10</div>
+          </div>
+          <div style="font-size: 12px; color: #666;">秒</div>
+        </div>
+      </div>
+
+      <!-- 型式6：霓虹燈效果 -->
+      <div class="timer-type" id="type-neon">
+        <h3>✨ 霓虹燈效果</h3>
+        <p>炫酷發光，科技感滿滿</p>
+        <div class="timer-neon">
+          <div class="neon-text" id="neon-number">10</div>
+          <div style="font-size: 12px; color: #666; margin-top: 10px;">秒</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 10px;">
+      <h3>📝 測試說明</h3>
+      <p>1. 選擇計時秒數和顯示型式</p>
+      <p>2. 點擊「開始測試」觀察不同計時器的效果</p>
+      <p>3. 注意在手機上的顯示效果和響應式表現</p>
+      <p>4. 告訴我你喜歡哪種型式，我會整合到主遊戲中</p>
+    </div>
+  </div>
+
+  <script>
+    let timers = {};
+    let activeTimers = [];
+
+    function selectStyle(style) {
+      // 更新選擇按鈕
+      document.querySelectorAll('.type-selector button').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`btn-${style}`).classList.add('active');
+      
+      // 更新下拉選單
+      document.getElementById('timer-style').value = style;
+      
+      // 顯示對應的計時器
+      showTimerType(style);
+    }
+
+    function showTimerType(type) {
+      const allTypes = document.querySelectorAll('.timer-type');
+      
+      if (type === 'all') {
+        allTypes.forEach(el => el.style.display = 'block');
+      } else {
+        allTypes.forEach(el => {
+          if (el.id === `type-${type}`) {
+            el.style.display = 'block';
+            el.classList.add('active');
+          } else {
+            el.style.display = 'none';
+            el.classList.remove('active');
+          }
+        });
+      }
+    }
+
+    function startAllTimers() {
+      const seconds = parseInt(document.getElementById('timer-input').value) || 10;
+      const selectedStyle = document.getElementById('timer-style').value;
+      
+      stopAllTimers();
+      resetAllTimers();
+      
+      if (selectedStyle === 'all') {
+        startTimer('classic', seconds);
+        startTimer('square', seconds);
+        startTimer('linear', seconds);
+        startTimer('flip', seconds);
+        startTimer('pulse', seconds);
+        startTimer('neon', seconds);
+      } else {
+        startTimer(selectedStyle, seconds);
+      }
+    }
+
+    function startTimer(type, totalSeconds) {
+      let timeLeft = totalSeconds;
+      
+      const updateTimer = () => {
+        updateTimerDisplay(type, timeLeft, totalSeconds);
+        
+        const typeEl = document.getElementById(`type-${type}`);
+        typeEl.classList.remove('warning', 'critical');
+        
+        if (timeLeft <= 3) {
+          typeEl.classList.add('critical');
+        } else if (timeLeft <= 5) {
+          typeEl.classList.add('warning');
+        }
+      };
+      
+      updateTimer();
+      
+      timers[type] = setInterval(() => {
+        timeLeft--;
+        updateTimer();
+        
+        if (timeLeft < 0) {
+          clearInterval(timers[type]);
+          delete timers[type];
+          onTimerComplete(type);
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay(type, timeLeft, totalTime) {
+      const progress = (totalTime - timeLeft) / totalTime;
+      
+      switch (type) {
+        case 'classic':
+          document.getElementById('classic-number').textContent = timeLeft;
+          const circumference = 2 * Math.PI * 30;
+          document.getElementById('classic-progress').style.strokeDashoffset = 
+            circumference * (1 - progress);
+          break;
+          
+        case 'square':
+          document.getElementById('square-number').textContent = timeLeft;
+          document.getElementById('square-progress').style.height = `${progress * 100}%`;
+          break;
+          
+        case 'linear':
+          document.getElementById('linear-number').textContent = timeLeft;
+          document.getElementById('linear-progress').style.width = `${progress * 100}%`;
+          break;
+          
+        case 'flip':
+          const tens = Math.floor(timeLeft / 10);
+          const ones = timeLeft % 10;
+          document.getElementById('flip-tens').textContent = tens;
+          document.getElementById('flip-ones').textContent = ones;
+          break;
+          
+        case 'pulse':
+          document.getElementById('pulse-number').textContent = timeLeft;
+          break;
+          
+        case 'neon':
+          document.getElementById('neon-number').textContent = timeLeft;
+          break;
+      }
+    }
+
+    function stopAllTimers() {
+      Object.keys(timers).forEach(type => {
+        clearInterval(timers[type]);
+        delete timers[type];
+      });
+    }
+
+    function resetAllTimers() {
+      const seconds = parseInt(document.getElementById('timer-input').value) || 10;
+      
+      // 重置所有計時器顯示
+      document.getElementById('classic-number').textContent = seconds;
+      document.getElementById('square-number').textContent = seconds;
+      document.getElementById('linear-number').textContent = seconds;
+      document.getElementById('pulse-number').textContent = seconds;
+      document.getElementById('neon-number').textContent = seconds;
+      
+      const tens = Math.floor(seconds / 10);
+      const ones = seconds % 10;
+      document.getElementById('flip-tens').textContent = tens;
+      document.getElementById('flip-ones').textContent = ones;
+      
+      // 重置進度
+      document.getElementById('classic-progress').style.strokeDashoffset = 188;
+      document.getElementById('square-progress').style.height = '0%';
+      document.getElementById('linear-progress').style.width = '0%';
+      
+      // 清除狀態
+      document.querySelectorAll('.timer-type').forEach(el => {
+        el.classList.remove('warning', 'critical');
+      });
+    }
+
+    function onTimerComplete(type) {
+      console.log(`${type} 計時器完成！`);
+      // 可以在這裡添加完成效果
+    }
+
+    // 下拉選單變更事件
+    document.getElementById('timer-style').addEventListener('change', function() {
+      showTimerType(this.value);
+      if (this.value !== 'all') {
+        selectStyle(this.value);
+      }
+    });
+
+    // 初始化
+    showTimerType('all');
+    resetAllTimers();
+  </script>
+</body>
+</html></h1>
+    
+    <!-- 現在繼續，但這個部分已經在更新後的 HTML 中被新的計時器型式測試替代了 -->

@@ -1,70 +1,3 @@
-/* 🔥 計時器樣式 (合併並修正版本) */
-.timer-display {
-  display: flex;
-  justify-content: center;
-  margin: 20px 0;
-  position: relative;
-  z-index: 10;
-}
-
-.timer-circle {
-  background-color: #fdcb6e;
-  position: relative;
-  width: 100px;
-  height: 100px;
-}
-
-.timer-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  z-index: 2;
-}
-
-.timer-number {
-  font-size: 28px;
-  font-weight: bold;
-  color: #ff6b6b;
-  line-height: 1;
-}
-
-.timer-label {
-  font-size: 14px;
-  color: #666;
-  margin-top: 2px;
-}
-
-.timer-ring {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform: rotate(-90deg);
-  z-index: 1;
-}
-
-.timer-ring circle {
-  stroke-dasharray: 264; /* 2 * π * 42 ≈ 264 */
-  stroke-dashoffset: 264; /* 🔥 從滿圓開始，確保12點鐘方向 */
-  stroke-linecap: round;
-  transition: stroke-dashoffset 1s linear;
-  fill: none;
-  stroke-width: 6;
-  stroke: #ff6b6b;
-}
-
-/* 🔥 計時器警告狀態 */
-.timer-warning .timer-number {
-  color: #ff9800;
-  animation: timerPulse 1s infinite;
-}
-
-.timer-critical .timer-number {
-  color: #f44336;
-  animation: timerPulse 0.5s infinite;
-}
-
 @keyframes timerPulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.1); }
@@ -886,40 +819,6 @@ button:disabled {
     padding: 10px;
   }
 
-  /* 🔥 手機上的計時器 */
-  .timer-display {
-    margin: 15px 0;
-    z-index: 100;
-  }
-
-  .timer-circle {
-    background-color: #fdcb6e;
-    width: 80px;
-    height: 80px;
-  }
-
-  .timer-ring {
-    width: 80px;
-    height: 80px;
-  }
-
-  .timer-ring circle {
-    cx: 40;  /* 中心點 */
-    cy: 40;  /* 中心點 */
-    r: 32;   /* 🔥 修正：從 34 改為 32，確保不超出範圍 */
-    stroke-width: 5;
-    stroke-dasharray: 201; /* 🔥 重新計算：2 * π * 32 ≈ 201 */
-    stroke-dashoffset: 201;
-  }
-
-  .timer-number {
-    font-size: 24px;
-  }
-
-  .timer-label {
-    font-size: 12px;
-  }
-  
   /* 🔥 登入區域改為垂直布局 */
   .login-section {
     flex-direction: column;
@@ -1212,35 +1111,6 @@ button:disabled {
   }
 
   /* 🔥 小手機上的計時器 */
-  .timer-display {
-    margin: 10px 0;
-    z-index: 150;
-  }
-  
-  .timer-circle {
-    background-color: #fdcb6e;
-    width: 70px;
-    height: 70px;
-  }
-
-  .timer-ring {
-    width: 70px;
-    height: 70px;
-  }
-
-  .timer-ring circle {
-    cx: 35;  /* 中心點 */
-    cy: 35;  /* 中心點 */
-    r: 28;   /* 🔥 修正：從 30 改為 28，確保不超出範圍 */
-    stroke-width: 4;
-    stroke-dasharray: 176; /* 🔥 重新計算：2 * π * 28 ≈ 176 */
-    stroke-dashoffset: 176;
-  }
-
-  .timer-number {
-    font-size: 20px;
-  }
-  
   .question {
     font-size: 17px;
     padding: 12px;

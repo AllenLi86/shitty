@@ -14,6 +14,10 @@
   
   <title>瞎掰王 - 雙人遊戲</title>
   <link rel="stylesheet" href="style.css">
+  <!-- 引入計時器樣式 -->
+  <link rel="stylesheet" href="timer.css">
+  <!-- 引入計時器組件 -->
+  <script src="timer.js"></script>
 </head>
 <body>
   <div class="container">
@@ -74,7 +78,8 @@
       <div id="score-display" class="score-display"></div>
 
       <!-- 🔥 新增：計時器顯示 -->
-      <div id="timer-display" class="timer-display" style="display: none;">
+      <div id="timer-display"></div>
+      <!-- <div id="timer-display" class="timer-display" style="display: none;">
         <div class="timer-circle">
           <div class="timer-text">
             <div class="timer-number" id="timer-number">15</div>
@@ -84,7 +89,7 @@
             <circle id="timer-circle" cx="50" cy="50" r="42" stroke="#ff6b6b" stroke-width="6" fill="none" />
           </svg>
         </div>
-      </div>
+      </div> -->
 
       <!-- 想想模式UI -->
       <div id="guesser-ui" class="role-ui guesser-mode" style="display: none;">
