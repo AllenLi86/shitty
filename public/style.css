@@ -1353,6 +1353,7 @@ button:disabled {
   }
 
   .timer-display {
+    background-color: #0984e3;
     margin: 10px 0;
     z-index: 150; /* 更高層級 */
   }
