@@ -422,27 +422,47 @@ function stopGameTimer() {
 function onTimerExpired() {
   console.log('🔥 計時器到期！');
 
-  // 檢查當前玩家狀態和設定
-  console.log('🔥 當前玩家:', currentPlayer);
-  console.log('🔥 當前想想者:', gameState?.currentGuesser);
-  console.log('🔥 計時效果設定:', gameState?.timerSettings?.effect);
+  const isGuesser = currentPlayer === gameState.currentGuesser;
+  const isAnswerer = currentPlayer !== gameState.currentGuesser;
 
-  // 如果當前玩家是想想者，應該觸發相應的效果
-  if (currentPlayer !== gameState?.currentGuesser) {
-    console.log('🔥 當前玩家是答題者，應用計時效果');
+  if (isGuesser) {
+    // 🔥 想想者：時間到後提醒該做決定了
+    console.log('🔥 想想者時間到 - 提醒該做決定了');
     
-    // 根據設定應用效果到解答區
-    const explanation = document.getElementById('answerer-explanation');
-    if (explanation && gameState?.timerSettings?.effect) {
-      const effect = gameState.timerSettings.effect;
-      
-      if (effect === 'hide') {
-        explanation.classList.add('timer-hidden');
-        console.log('🔥 已隱藏解答');
-      } else if (effect === 'dim') {
-        explanation.classList.add('timer-dimmed');
-        console.log('🔥 已變淡解答');
+    // 讓按鈕閃爍提醒
+    const buttons = document.querySelectorAll('.guess-button');
+    buttons.forEach(button => {
+      button.style.animation = 'timerPulse 0.5s infinite';
+    });
+    
+    // 3秒後停止閃爍
+    setTimeout(() => {
+      buttons.forEach(button => {
+        button.style.animation = '';
+      });
+    }, 3000);
+    
+  } else if (isAnswerer) {
+    // 🔥 答題者：根據角色和設定應用效果
+    const isHonest = gameState.answererRole === 'honest';
+    
+    if (isHonest) {
+      // 只有老實人才會受到隱藏/變淡效果
+      const explanation = document.getElementById('answerer-explanation');
+      if (explanation && explanation.style.display !== 'none' && gameState?.timerSettings?.effect) {
+        const effect = gameState.timerSettings.effect;
+        
+        if (effect === 'hide') {
+          explanation.classList.add('timer-hidden');
+          console.log('🔥 已隱藏解答');
+        } else if (effect === 'dim') {
+          explanation.classList.add('timer-dimmed');
+          console.log('🔥 已變淡解答');
+        }
       }
+    } else {
+      // 瞎掰人時間到後不受影響
+      console.log('🔥 瞎掰人時間到 - 無特殊效果');
     }
   }
 }
@@ -509,14 +529,17 @@ async function updateGameDisplay() {
     console.error('🔥 分數顯示更新失敗:', error);
   }
 
-  // 🔥 啟動計時器（對答題者）
-  if (isAnswerer) {
-    console.log('🔥 當前玩家是答題者，準備啟動計時器');
-    startGameTimer();
-  } else {
-    console.log('🔥 當前玩家是想想者，不啟動計時器');
-    stopGameTimer();
-  }
+  // // 🔥 啟動計時器（對答題者）
+  // if (isAnswerer) {
+  //   console.log('🔥 當前玩家是答題者，準備啟動計時器');
+  //   startGameTimer();
+  // } else {
+  //   console.log('🔥 當前玩家是想想者，不啟動計時器');
+  //   stopGameTimer();
+  // }
+  // 🔥 修改：兩個玩家都顯示計時器
+  console.log('🔥 準備啟動計時器，遊戲狀態:', gameState.timerSettings);
+  startGameTimer();
 
   if (isGuesser) {
     // 顯示想想UI
