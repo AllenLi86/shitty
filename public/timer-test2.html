@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>計時器響應式測試</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* 測試頁面額外樣式 */
+    .test-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .test-controls {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .test-controls input, .test-controls select, .test-controls button {
+      margin: 5px;
+      padding: 8px 12px;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+    }
+    
+    .test-controls button {
+      background: #4CAF50;
+      color: white;
+      border: 2px solid #4CAF50;
+      cursor: pointer;
+    }
+    
+    .test-controls button:hover {
+      background: #45a049;
+    }
+    
+    .screen-size-info {
+      background: #e3f2fd;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      text-align: center;
+    }
+    
+    /* 🔥 修正計時器樣式 */
+    .timer-display {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+      position: relative;
+      z-index: 100;
+    }
+
+    .timer-circle {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      background-color: #ff9800;
+    }
+
+    .timer-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 2;
+    }
+
+    .timer-number {
+      font-size: 28px;
+      font-weight: bold;
+      color: #ff6b6b;
+      line-height: 1;
+    }
+
+    .timer-label {
+      font-size: 14px;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .timer-ring {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: rotate(-90deg);
+      z-index: 1;
+    }
+
+    .timer-ring circle {
+      stroke-dasharray: 264;
+      stroke-dashoffset: 264; /* 🔥 確保從滿圓開始 */
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s linear;
+      fill: none;
+      stroke-width: 6;
+      stroke: #ff6b6b;
+    }
+
+    .timer-warning .timer-number {
+      color: #ff9800;
+      animation: timerPulse 1s infinite;
+    }
+
+    .timer-critical .timer-number {
+      color: #f44336;
+      animation: timerPulse 0.5s infinite;
+    }
+
+    @keyframes timerPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    /* 🔥 手機響應式修正 */
+    @media (max-width: 768px) {
+      .timer-display {
+        margin: 15px 0;
+        z-index: 150;
+      }
+      
+      .timer-circle {
+        width: 80px;
+        height: 80px;
+      }
+
+      .timer-ring {
+        width: 80px;
+        height: 80px;
+      }
+
+      .timer-ring circle {
+        stroke-dasharray: 214; /* 2 * π * 34 ≈ 214 */
+        stroke-dashoffset: 214;
+        stroke-width: 5;
+      }
+
+      .timer-number {
+        font-size: 24px;
+      }
+
+      .timer-label {
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .timer-display {
+        margin: 10px 0;
+        z-index: 200;
+      }
+      
+      .timer-circle {
+        width: 70px;
+        height: 70px;
+      }
+
+      .timer-ring {
+        width: 70px;
+        height: 70px;
+      }
+
+      .timer-ring circle {
+        stroke-dasharray: 188; /* 2 * π * 30 ≈ 188 */
+        stroke-dashoffset: 188;
+        stroke-width: 4;
+      }
+
+      .timer-number {
+        font-size: 20px;
+      }
+    }
+    
+    .explanation-test {
+      background: #f0f0f0;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      border-left: 4px solid #4CAF50;
+    }
+
+    .explanation-test.timer-hidden {
+      display: none !important;
+    }
+
+    .explanation-test.timer-dimmed {
+      opacity: 0.3 !important;
+      filter: blur(1px) !important;
+      pointer-events: none !important;
+      background-color: #f0f0f0 !important;
+      color: #999 !important;
+      transition: all 0.3s ease !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>🕐 計時器響應式測試</h1>
+    
+    <div class="screen-size-info" id="screen-info">
+      載入中...
+    </div>
+    
+    <div class="test-controls">
+      <div>
+        <label>計時秒數：</label>
+        <input type="number" id="timer-input" value="5" min="1" max="60">
+      </div>
+      <div>
+        <label>效果類型：</label>
+        <select id="effect-type">
+          <option value="hide">隱藏解答</option>
+          <option value="dim">解答變淡</option>
+        </select>
+      </div>
+      <div>
+        <button onclick="startTest()">🚀 開始測試</button>
+        <button onclick="stopTest()">⏹️ 停止測試</button>
+        <button onclick="resetTest()">🔄 重置</button>
+      </div>
+    </div>
+
+    <!-- 計時器顯示 -->
+    <div id="timer-display" class="timer-display" style="display: none;">
+      <div class="timer-circle">
+        <div class="timer-text">
+          <div class="timer-number" id="timer-number">5</div>
+          <div class="timer-label">秒</div>
+        </div>
+        <svg class="timer-ring" width="100" height="100">
+          <circle id="timer-circle" cx="50" cy="50" r="42" stroke="#ff6b6b" stroke-width="6" fill="none" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- 測試解答區 -->
+    <div id="explanation" class="explanation-test">
+      💡 這是測試解答區域。時間到後，這裡應該會根據設定隱藏或變淡。
+      <br><br>
+      在手機上測試時，請檢查：<br>
+      1. 計時圈是否完整顯示<br>
+      2. 是否從12點鐘方向開始倒數<br>
+      3. 數字是否清晰可見<br>
+      4. 是否被其他元素遮擋
+    </div>
+    
+    <div class="test-controls">
+      <h3>📱 螢幕尺寸測試</h3>
+      <p>請調整瀏覽器視窗大小或在不同設備上測試</p>
+      <div>
+        <button onclick="simulateDesktop()">🖥️ 桌面版 (1024px)</button>
+        <button onclick="simulateTablet()">📱 平板 (768px)</button>
+        <button onclick="simulateMobile()">📱 手機 (375px)</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let testTimer = null;
+
+    // 顯示螢幕資訊
+    function updateScreenInfo() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      
+      let sizeCategory = '';
+      if (width > 768) sizeCategory = '桌面版';
+      else if (width > 480) sizeCategory = '平板/大手機';
+      else sizeCategory = '小手機';
+      
+      document.getElementById('screen-info').innerHTML = 
+        `螢幕尺寸: ${width} × ${height} | 設備比例: ${devicePixelRatio} | 分類: ${sizeCategory}`;
+    }
+
+    function startTest() {
+      console.log('🔥 開始測試計時器');
+      
+      const seconds = parseInt(document.getElementById('timer-input').value) || 5;
+      const effect = document.getElementById('effect-type').value;
+      
+      console.log('🔥 計時秒數:', seconds, '效果:', effect);
+      
+      stopTest();
+      resetTest();
+      
+      const timerDisplay = document.getElementById('timer-display');
+      timerDisplay.style.display = 'flex';
+      
+      let timeLeft = seconds;
+      const totalTime = seconds;
+      
+      const timerNumber = document.getElementById('timer-number');
+      const timerCircle = document.getElementById('timer-circle');
+      
+      // 🔥 動態適應不同螢幕尺寸的圓圈參數
+      function getCircleParams() {
+        const width = window.innerWidth;
+        if (width <= 480) {
+          return { cx: 35, cy: 35, r: 30, size: 70, circumference: 188 };
+        } else if (width <= 768) {
+          return { cx: 40, cy: 40, r: 34, size: 80, circumference: 214 };
+        } else {
+          return { cx: 50, cy: 50, r: 42, size: 100, circumference: 264 };
+        }
+      }
+      
+      function updateTimer() {
+        console.log('🔥 剩餘時間:', timeLeft);
+        
+        // 更新數字
+        timerNumber.textContent = timeLeft;
+        
+        // 🔥 動態獲取圓圈參數
+        const params = getCircleParams();
+        
+        // 🔥 更新SVG和圓圈尺寸
+        const svg = timerCircle.parentElement;
+        svg.setAttribute('width', params.size);
+        svg.setAttribute('height', params.size);
+        timerCircle.setAttribute('cx', params.cx);
+        timerCircle.setAttribute('cy', params.cy);
+        timerCircle.setAttribute('r', params.r);
+        
+        // 🔥 計算進度
+        const progress = (totalTime - timeLeft) / totalTime;
+        const strokeDashoffset = params.circumference * (1 - progress);
+        
+        // 🔥 設定圓圈參數
+        timerCircle.style.strokeDasharray = params.circumference;
+        timerCircle.style.strokeDashoffset = strokeDashoffset;
+        
+        console.log('🔥 進度:', progress, 'strokeDashoffset:', strokeDashoffset, 'circumference:', params.circumference);
+        
+        // 更新顏色
+        timerDisplay.className = 'timer-display';
+        if (timeLeft <= 3) {
+          timerDisplay.classList.add('timer-critical');
+          timerCircle.style.stroke = '#f44336';
+        } else if (timeLeft <= 5) {
+          timerDisplay.classList.add('timer-warning');
+          timerCircle.style.stroke = '#ff9800';
+        } else {
+          timerCircle.style.stroke = '#ff6b6b';
+        }
+      }
+      
+      // 🔥 初始設定
+      const initialParams = getCircleParams();
+      timerCircle.style.strokeDasharray = initialParams.circumference;
+      timerCircle.style.strokeDashoffset = initialParams.circumference; // 從滿圓開始
+      
+      updateTimer();
+      
+      testTimer = setInterval(() => {
+        timeLeft--;
+        updateTimer();
+        
+        if (timeLeft <= 0) {
+          if (timeLeft === 0) {
+            updateTimer();
+          }
+          clearInterval(testTimer);
+          testTimer = null;
+          onTimerExpired(effect);
+        }
+      }, 1000);
+    }
+
+    function stopTest() {
+      if (testTimer) {
+        clearInterval(testTimer);
+        testTimer = null;
+      }
+      
+      document.getElementById('timer-display').style.display = 'none';
+    }
+
+    function resetTest() {
+      const explanation = document.getElementById('explanation');
+      explanation.classList.remove('timer-hidden', 'timer-dimmed');
+      
+      const timerDisplay = document.getElementById('timer-display');
+      timerDisplay.className = 'timer-display';
+      
+      const timerCircle = document.getElementById('timer-circle');
+      timerCircle.style.stroke = '#ff6b6b';
+    }
+
+    function onTimerExpired(effect) {
+      console.log('🔥 計時器到期！效果:', effect);
+      
+      const explanation = document.getElementById('explanation');
+      if (effect === 'hide') {
+        explanation.classList.add('timer-hidden');
+        console.log('🔥 已隱藏解答');
+      } else if (effect === 'dim') {
+        explanation.classList.add('timer-dimmed');
+        console.log('🔥 已變淡解答');
+      }
+    }
+
+    // 螢幕尺寸模擬
+    function simulateDesktop() {
+      document.body.style.width = '1024px';
+      document.body.style.margin = '0 auto';
+      updateScreenInfo();
+    }
+
+    function simulateTablet() {
+      document.body.style.width = '768px';
+      document.body.style.margin = '0 auto';
+      updateScreenInfo();
+    }
+
+    function simulateMobile() {
+      document.body.style.width = '375px';
+      document.body.style.margin = '0 auto';
+      updateScreenInfo();
+    }
+
+    // 監聽視窗大小變化
+    window.addEventListener('resize', updateScreenInfo);
+    window.addEventListener('load', updateScreenInfo);
+    
+    // 監聽設備方向變化
+    window.addEventListener('orientationchange', () => {
+      setTimeout(updateScreenInfo, 500);
+    });
+  </script>
+</body>
+</html>
