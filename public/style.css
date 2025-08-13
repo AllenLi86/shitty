@@ -904,9 +904,12 @@ button:disabled {
   }
 
   .timer-ring circle {
-    stroke-dasharray: 214; /* 2 * π * 34 ≈ 214 */
-    stroke-dashoffset: 214;
+    cx: 40;  /* 中心點 */
+    cy: 40;  /* 中心點 */
+    r: 32;   /* 🔥 修正：從 34 改為 32，確保不超出範圍 */
     stroke-width: 5;
+    stroke-dasharray: 201; /* 🔥 重新計算：2 * π * 32 ≈ 201 */
+    stroke-dashoffset: 201;
   }
 
   .timer-number {
@@ -1226,9 +1229,12 @@ button:disabled {
   }
 
   .timer-ring circle {
-    stroke-dasharray: 188; /* 2 * π * 30 ≈ 188 */
-    stroke-dashoffset: 188;
+    cx: 35;  /* 中心點 */
+    cy: 35;  /* 中心點 */
+    r: 28;   /* 🔥 修正：從 30 改為 28，確保不超出範圍 */
     stroke-width: 4;
+    stroke-dasharray: 176; /* 🔥 重新計算：2 * π * 28 ≈ 176 */
+    stroke-dashoffset: 176;
   }
 
   .timer-number {

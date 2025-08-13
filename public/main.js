@@ -418,21 +418,32 @@ function startGameTimer() {
     // 更新數字
     timerNumber.textContent = timeLeft;
 
-    // 🔥 動態計算圓周長，適應不同螢幕尺寸
-    const circle = timerCircle;
-    const radius = parseFloat(circle.getAttribute('r')) || 42;
-    const circumference = 2 * Math.PI * radius;
-    const progress = (totalTime - timeLeft) / totalTime;
-    const strokeDashoffset = circumference * (1 - progress);
-
-    timerCircle.style.strokeDashoffset = strokeDashoffset;
-
-    // 🔥 新增：初始化時確保從滿圓開始
-    if (timeLeft === totalTime) {
-      timerCircle.style.strokeDashoffset = circumference; // 完整圓周，從12點開始
+    // 🔥 動態獲取圓圈參數，適應不同螢幕尺寸
+    function getCircleParams() {
+      const width = window.innerWidth;
+      if (width <= 480) {
+        return { r: 28, circumference: 176 }; // 小手機
+      } else if (width <= 768) {
+        return { r: 32, circumference: 201 }; // 手機
+      } else {
+        return { r: 42, circumference: 264 }; // 桌面
+      }
     }
 
-    console.log('🔥 圓圈進度:', progress, 'strokeDashoffset:', strokeDashoffset);
+    const params = getCircleParams();
+    const progress = (totalTime - timeLeft) / totalTime;
+    const strokeDashoffset = params.circumference * (1 - progress);
+
+    // 🔥 確保使用正確的圓周長
+    timerCircle.style.strokeDasharray = params.circumference;
+    timerCircle.style.strokeDashoffset = strokeDashoffset;
+
+    // 🔥 初始化時確保從滿圓開始
+    if (timeLeft === totalTime) {
+      timerCircle.style.strokeDashoffset = params.circumference; // 完整圓周，從12點開始
+    }
+
+    console.log('🔥 圓圈進度:', progress, 'strokeDashoffset:', strokeDashoffset, 'circumference:', params.circumference);
 
     // 根據剩餘時間改變顏色和狀態
     timerDisplay.className = 'timer-display';
@@ -443,7 +454,7 @@ function startGameTimer() {
       timerDisplay.classList.add('timer-warning');
       timerCircle.style.stroke = '#ff9800';
     } else {
-      timerCircle.style.stroke = '#2de436ff';
+      timerCircle.style.stroke = '#3be944ff';
     }
   }
 
